@@ -1,0 +1,10 @@
+#pragma once
+class CModulInfo {
+public:
+    static const char device_name[]; 
+public:
+    bool init();
+};
+
+extern CModulInfo ava;
+
