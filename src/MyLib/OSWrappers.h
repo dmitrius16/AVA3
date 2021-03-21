@@ -1,3 +1,4 @@
+#include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include <stdint.h>
 class CSemaphore {
@@ -30,7 +31,36 @@ public:
     void unlock();
 };
 
+class CCriticalSection : public CMutex
+{
+public:
+    CCriticalSection(){CMutex::create();}
+    virtual ~CCriticalSection(){}
+protected:
+    virtual bool Create(){return false;}
+};
 
 
+class CScopedCritSec
+{
+    CMutex *m_pCritSec;
+private:
+    CScopedCritSec(const CScopedCritSec& obj);
+    CScopedCritSec& operator=(CScopedCritSec& obj);
+public:
+    CScopedCritSec(CMutex &critSec){m_pCritSec = &critSec; m_pCritSec->lock();}
+    ~CScopedCritSec(){m_pCritSec->unlock();}
+};
+
+/*
+class CScopedUnsheduledRegion   // simple clear interrupt
+{
+public:
+    CScopedUnsheduledRegion(){__disable_irq();}
+    ~CScopedUnsheduledRegion(){__enable_irq();}
+};
+*/
+
+void taskDelayMs(uint32_t delayMs);
 
 

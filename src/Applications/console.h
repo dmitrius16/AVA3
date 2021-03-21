@@ -1,5 +1,7 @@
 #pragma once
 #include <stdarg.h>
+#include <stdint.h>
+#include "MyLib/OSWrappers.h"
 
 void my_printf(const char* format, ...);
 void clear_screen();
@@ -21,18 +23,21 @@ typedef struct {
 
 bool add_console_command(const char *strName, ConsoleCmd *pCmdExec);
 
+class Stream;
 class CConsole : public ConsoleCmd {
     friend void my_printf(const char* format, ...);
     friend void clear_screen();
     friend bool add_console_command(const char *strName, ConsoleCmd *pCmdExec);
     typedef void (CConsole::*ConsoleTask)();
 private:
+    bool m_bInit;
     int m_curRcvIndex;
     bool m_bMakeRepeatCalls;
+    bool m_bMakeClearDisplay;
     bool m_bMakeUpdateDisplay;
     int  m_cmdEmptyInd;
     int  m_curCmdInd;
-    int m_curParaInd;
+    int m_curParamInd;
     int m_repeatCallCnt;
 
     Stream *m_pStream;
@@ -68,7 +73,7 @@ public:
     void moveCursorAtStart();
     void enableCursor();
     void disableCursor();
-    //bool isConsoleInit(){return m_bInit;}
+    bool isConsoleInit(){return m_bInit;}
 };
 
 extern CConsole g_Console;
