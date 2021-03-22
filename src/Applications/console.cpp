@@ -23,7 +23,9 @@ CConsole::CConsole() : m_bMakeRepeatCalls(false),m_bMakeClearDisplay(false),m_bM
 bool CConsole::OnInitProcess(void *param) {
     m_Lock.create();
     m_pStream = &Serial; //!!!Arduino call here arduino instance
-
+	
+	//Serial.begin(115200);
+ 
     m_bInit = true;
     return true;
 }
@@ -39,6 +41,8 @@ bool CConsole::OnTimer() {
 
     addConsCmd("?", this);
     addConsCmd("vers", this);
+
+	uint32_t dbg_counter = 0;
 
     while(1) {
         taskDelayMs(1);
