@@ -79,7 +79,7 @@ void CConsole::processStream() {
 				break;
 		}
 		
-	    bool findEscape = FindEscapeSequence(cntRxSmbls);
+	    bool findEscape = findEscapeSequence(cntRxSmbls);
 		if(findEscape)
 			sendEcho = false;
 			
@@ -104,6 +104,27 @@ void CConsole::processStream() {
 		callCmdMngr();
 
     }
+}
+
+bool CConsole::findEscapeSequence(uint8_t numRxBytes)
+{
+	bool res = false;
+	char temp[5];	
+	
+	strncpy(temp,&RxBuffer[m_curRcvIndex+numRxBytes - 3],3);	//find escape \x1b[A - 3 symbols
+	//find arrow up 
+	if(!strncmp(temp,"\x1b[A",3))
+	{
+		my_printf("Arrow UP");
+		res = true;
+	}
+	//find arrow down
+	if(!strncmp(temp,"\x1b[B",3))
+	{
+		my_printf("Arrow DOWN");
+		res = true;
+	}
+	return res;
 }
 
 void CConsole::parseRxCmd() {
@@ -153,6 +174,25 @@ void CConsole::parseRxCmd() {
 			callCmd();	
 		}
 	}
+}
+
+void CConsole::clearScreen()
+{
+     my_printf("%c",0xC); //clear display
+}
+void CConsole::moveCursorAtStart()
+{
+    my_printf("\x1b[1;1H");	// move cursor 1,1
+}
+
+void CConsole::enableCursor()
+{
+     my_printf("\x1b[?25h");    //enable cursor
+}
+
+void CConsole::disableCursor()
+{
+    my_printf("\x1b[?25l"); // disable cursor
 }
 
 int CConsole::findConsCmd(const char *strName) {
@@ -256,7 +296,8 @@ void my_printf(const char* format, ...)
         CScopedCritSec critSec(g_Console.m_Lock);
         va_list paramList;
         va_start(paramList, format);
-        int iResult = g_Console.printData(format, paramList);
+//        int iResult = g_Console.printData(format, paramList);
+	    g_Console.printData(format, paramList);
         va_end(paramList);   
     }
 }

@@ -63,7 +63,7 @@ private:
     void callCmdMngr();
     void callCmd();
     void parseRxCmd();
-    bool FindEscapeSequence(uint8_t numRxBytes);
+    bool findEscapeSequence(uint8_t numRxBytes);
 public:
     CConsole();
     bool OnInitProcess(void *param = nullptr);
