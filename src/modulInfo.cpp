@@ -53,7 +53,7 @@ bool CModulInfo::initRelaysPins() {
 
 bool CModulInfo::init() {
     // here place init code for ava3
-    add_console_command("system", this);
+    add_console_command("sys", this);
     initRelaysPins();
     return true;
 }
@@ -83,17 +83,55 @@ void CModulInfo::relayTurnOff(AVA_RELAY relay) {
     relaySwitch(relay, 0);
 }
 
-void CModulInfo::relayToggle(AVA_RELAY relay) {
+void CModulInfo::relayToggle(AVA_RELAY relay, bool consOut) {
     int8_t val = readRelayPin(relay);
+    if (consOut) {
+        my_printf("Current state relay %s\r\n", val ? "on" : "off");
+    }
     val ^= 1;
     relaySwitch(relay, val);
+    if (consOut) {
+        my_printf("Set state relay to %s\r\n", val ? "on" : "off");
+    }
 }
 
 void CModulInfo::Command(int argc, char* argv[]) {
+    
     if (argc >= 2) {
         my_printf("receive system command\r\n");
         if (!strcmp("?", argv[1])) {
-            my_printf("Output help info\r\n");
+            my_printf("Relay commands:\r\n");
+            my_printf("\trelay_name = {work, cell, curr10uA, curr100mA} {\"\", on, off}\r\n");
+            my_printf("\tif command after relay name is empty toggle state is occured\r\n");
+        } else {    //here relay command
+            typedef struct {
+                const char *pName;
+                AVA_RELAY relay;
+            }relay_to_name_map;
+            relay_to_name_map relayNames[] = {{"work", AVA_RELAY::WORK}, 
+                                            {"cell", AVA_RELAY::CELL}, 
+                                            {"curr10uA", AVA_RELAY::CURRENT_10uA}, 
+                                            {"curr100mA", AVA_RELAY::CURRENT_100mA}};
+        for (int i = 0; i < sizeof(relayNames) / sizeof(relayNames[0]); i++) {
+                if (!strcmp(relayNames[i].pName, argv[1])) {
+                    if (argc > 2) { // execute command 
+                        if (!strcmp("on", argv[2])) {
+                            relayTurnOn(relayNames[i].relay);
+                            my_printf("turn on relay\r\n");
+                        } else if (!strcmp("off", argv[2])) {
+                            relayTurnOn(relayNames[i].relay);
+                            my_printf("turn off relay\r\n");
+                        } else {
+                            my_printf("undefined commamd\r\n");
+                        }
+                    } else { // make toggle
+                        relayToggle(relayNames[i].relay, true);
+                    }
+                }
+            }
         }
+        
+        
+        
     }
 }

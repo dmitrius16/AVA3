@@ -24,7 +24,7 @@ public:
     bool init();
     void relayTurnOn(AVA_RELAY relay);
     void relayTurnOff(AVA_RELAY relay);
-    void relayToggle(AVA_RELAY relay);
+    void relayToggle(AVA_RELAY relay, bool consOut = false);
 public: //console interface
     virtual void Command(int argc, char* argv[]);
 
