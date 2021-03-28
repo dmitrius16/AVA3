@@ -39,8 +39,12 @@ int CConsole::printData(const char* format, va_list &arglist) {
 bool CConsole::OnTimer() {
     my_printf(pPromtStr);
 
+///!!! debug msg
+
     addConsCmd("?", this);
     addConsCmd("vers", this);
+
+///!!! 
 
 	uint32_t dbg_counter = 0;
 
@@ -140,6 +144,10 @@ void CConsole::parseRxCmd() {
 	{
 		if(findConsCmd(pStrCmd) != -1)
 		{
+			///!!! 
+			my_printf("Command %s find\r\n", pStrCmd);
+			///!!!
+			
 			m_curParamInd = 0;
 			//~~~ get command parameters
 			while(pStrCmd!=NULL)
@@ -153,26 +161,30 @@ void CConsole::parseRxCmd() {
 				m_pCmdParams[m_curParamInd++] = pStrCmd;//
 				pStrCmd = strtok(NULL," ");
 				
+				
+				if (pStrCmd != NULL) {
+				
 				//check for --c param
 				
-				if(!strcmp(pStrCmd,"--c"))
-				{    
-					m_bMakeRepeatCalls = true;
-					break;
+					if(!strcmp(pStrCmd,"--c"))
+					{    
+						m_bMakeRepeatCalls = true;
+						break;
+					}
+					else if(!strcmp(pStrCmd,"--v"))
+					{
+						m_bMakeRepeatCalls = true;
+						m_bMakeClearDisplay = true;
+						break;
+					}
+                	else if(!strcmp(pStrCmd,"--u"))
+                	{
+                    	m_bMakeRepeatCalls = true;
+                    	m_bMakeUpdateDisplay = true;
+                    	my_printf("%c",0xC); //clear display
+                    	my_printf("\x1b[?25l"); // disable cursor
+                	}
 				}
-				else if(!strcmp(pStrCmd,"--v"))
-				{
-					m_bMakeRepeatCalls = true;
-					m_bMakeClearDisplay = true;
-					break;
-				}
-                else if(!strcmp(pStrCmd,"--u"))
-                {
-                    m_bMakeRepeatCalls = true;
-                    m_bMakeUpdateDisplay = true;
-                    my_printf("%c",0xC); //clear display
-                    my_printf("\x1b[?25l"); // disable cursor
-                }
 			}
 			my_printf("\r\n");
 			callCmd();	
@@ -261,8 +273,16 @@ bool CConsole::addConsCmd(const char* strName, ConsoleCmd *pCmdExec) {
 			}
 		}
 	}
-    
+    ///!!! add cond cmd
+	my_printf("Add console command %s  len - %d\r\n", strName, strlen(strName));
+	///!!!
+
     char *pName = new char[strlen(strName) + 1];
+	
+	///!!!
+	my_printf("Allocate memory %x\r\n", pName);
+	///!!!
+
     strcpy(pName,strName);
 	m_ConsoleCmdBuf[m_cmdEmptyInd].cmdName = pName;
     m_ConsoleCmdBuf[m_cmdEmptyInd].pConsCmd = pCmdExec;
@@ -270,6 +290,7 @@ bool CConsole::addConsCmd(const char* strName, ConsoleCmd *pCmdExec) {
 	return true;
 }
 
+// this Command used only for test
 void CConsole::Command(int argc,char* argv[])
 {
     if(!strcmp(argv[0],"vers"))	{
