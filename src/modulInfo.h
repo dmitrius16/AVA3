@@ -18,6 +18,7 @@ public:
     static const char device_name[]; 
 private:
     bool initRelaysPins();
+    bool initSpiSubsystem();
     void relaySwitch(AVA_RELAY relay, int8_t val);
     int8_t readRelayPin(AVA_RELAY relay);
 public:

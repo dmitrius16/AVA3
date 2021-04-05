@@ -1,6 +1,7 @@
 
 #include <stdint.h>
 #include "modulInfo.h"
+#include "Drivers/subsytemDAC_ADC.h"
 #include "Arduino.h"
 
 CModulInfo ava;
@@ -48,6 +49,10 @@ bool CModulInfo::initRelaysPins() {
     pinMode(pin100mA, OUTPUT);
     pinMode(pinCELL, OUTPUT);    
     return true;
+}
+
+bool CModulInfo::initSpiSubsystem() {
+    
 }
 
 
@@ -98,11 +103,18 @@ void CModulInfo::relayToggle(AVA_RELAY relay, bool consOut) {
 void CModulInfo::Command(int argc, char* argv[]) {
     
     if (argc >= 2) {
-        my_printf("receive system command\r\n");
+        //my_printf("receive system command\r\n");
         if (!strcmp("?", argv[1])) {
+            my_printf("adc_start - start 100 adc asking\r\n");
             my_printf("Relay commands:\r\n");
             my_printf("\trelay_name = {work, cell, curr10uA, curr100mA} {\"\", on, off}\r\n");
             my_printf("\tif command after relay name is empty toggle state is occured\r\n");
+        } else if (!strcmp("adc_start", argv[1])) {
+            CAnalogSubsystem& analogSubsystem = getAnalogSubsystemInstance();
+            if (analogSubsystem.isInit() == false) {
+                bool res = analogSubsystem.init();
+                my_printf("Init analog subsystem %s\r\n", res ? "Ok" : "Err");
+            }
         } else {    //here relay command
             typedef struct {
                 const char *pName;
@@ -112,7 +124,7 @@ void CModulInfo::Command(int argc, char* argv[]) {
                                             {"cell", AVA_RELAY::CELL}, 
                                             {"curr10uA", AVA_RELAY::CURRENT_10uA}, 
                                             {"curr100mA", AVA_RELAY::CURRENT_100mA}};
-        for (int i = 0; i < sizeof(relayNames) / sizeof(relayNames[0]); i++) {
+            for (int i = 0; i < sizeof(relayNames) / sizeof(relayNames[0]); i++) {
                 if (!strcmp(relayNames[i].pName, argv[1])) {
                     if (argc > 2) { // execute command 
                         if (!strcmp("on", argv[2])) {
