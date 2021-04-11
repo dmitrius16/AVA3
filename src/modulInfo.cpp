@@ -8,10 +8,10 @@ CModulInfo ava;
 
 constexpr const char CModulInfo::device_name[] = "AVA3";
 
-const int8_t pinWORK = 26;
-const int8_t pin10uA = 36;
-const int8_t pin100mA = 37;
-const int8_t pinCELL = 33;
+const int8_t pinWORK = 4;  //26
+const int8_t pin10uA =  22;    //36;
+const int8_t pin100mA = 23; //37;
+const int8_t pinCELL = 21;//33;
 
 typedef struct {
     AVA_RELAY relay;

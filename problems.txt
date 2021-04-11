@@ -1,1 +1,11 @@
 1. Allocate dynamic memory -> In console.cpp addconsCmd replace new char[] to static buffer
+////////
+ADC spi interface:
+datasheet 28 page:
+    SCLK - low state
+    SCLK rising edge - data clocked out
+    SCLK falling edge - data sampled
+
+DAC spi interface:
+    same as ADC
+

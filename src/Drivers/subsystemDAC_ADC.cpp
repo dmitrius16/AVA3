@@ -1,15 +1,37 @@
 #include "subsytemDAC_ADC.h"
 #include "Arduino.h"
 #include "driver/ledc.h"
+#include "driver/spi_master.h"
 #include "esp_err.h"
 
 //hardware definition for pereodic asking
 #define LEDC_HS_TIMER           LEDC_TIMER_0
 #define LEDC_HS_MODE            LEDC_HIGH_SPEED_MODE
-#define LEDC_HS_CH0_GPIO        (32)
+//#define LEDC_HS_CH0_GPIO        (32)
 #define LEDC_HS_CH0_CHANNEL      LEDC_CHANNEL_0
 // hardware defenition for BUSY input
-constexpr uint8_t BUSY_PIN = 7;  //pay attention here arduino lib so pin number
+//const uint8_t RESET_ADC_PIN = 
+
+
+//ADC configuration
+const uint8_t ADC_MOSI1_GPIO = 13;
+const uint8_t ADC_MISO1_GPIO = 12;
+const uint8_t ADC_MISO2_GPIO =19;
+const uint8_t ADC_SCLK_GPIO = 18;
+
+
+const uint8_t ADC_CONVST_GPIO = 32;
+const uint8_t ADC_BUSY_GPIO = 35;  
+const uint8_t ADC_CS_GPIO = 15;
+const uint8_t DAC_SLAVE_CS_GPIO = 5;
+
+
+spi_device_handle_t g_spiADC;
+
+
+
+
+
 
 void IRAM_ATTR adc_BUSY_falling_edge() {
 
@@ -43,7 +65,7 @@ bool CAnalogSubsystem::initPereodicADCAsking() {
     res = res_api == ESP_OK;
     if (res) {
         ledc_channel_config_t ledc_ch_cfg = {
-            .gpio_num = LEDC_HS_CH0_GPIO,
+            .gpio_num = ADC_CONVST_GPIO,
             .speed_mode = LEDC_HS_MODE,
             .channel = LEDC_HS_CH0_CHANNEL,
             .intr_type = LEDC_INTR_DISABLE,
@@ -62,6 +84,35 @@ bool CAnalogSubsystem::initPereodicADCAsking() {
 
 bool CAnalogSubsystem::initSpiSubsystem() {
     bool res = false;
+    esp_err_t ret;
+    spi_bus_config_t spi_bus_cfg = {
+        .mosi_io_num = ADC_MOSI1_GPIO,
+        .miso_io_num = ADC_MISO1_GPIO,
+        .sclk_io_num = ADC_SCLK_GPIO,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+        .max_transfer_sz = 3
+        }; // 4 bytes per interrupt
+    
+    spi_device_interface_config_t dev_cfg = {
+            .command_bits = 0,       
+            .address_bits = 0,
+            .dummy_bits = 0,
+            .mode =  1, // set SPI_MODE 1, CLK - low, CLK rising edge - shifts data, CLK - falling edge - samples data
+            .duty_cycle_pos = 0, // 0 here is 50 % it is equal 128
+            .cs_ena_pretrans = 0, // amout spi bit cycles before transaction
+            .cs_ena_posttrans = 0, //???  cs should state after transaction 
+            .clock_speed_hz = 5 * 1000 * 1000,
+            .input_delay_ns = 0, //???
+            .spics_io_num = ADC_CS_GPIO,
+            .flags = SPI_DEVICE_CLK_AS_CS,
+            .queue_size = 1, // ????
+        };
+    
+        ret = spi_bus_initialize(HSPI_HOST, &spi_bus_cfg, 0); // 0 DMA not used
+        ESP_ERROR_CHECK(ret); 
+        ret = spi_bus_add_device(HSPI_HOST, &dev_cfg, &g_spiADC);
+        ESP_ERROR_CHECK(ret);
     
     return res;
 }
@@ -78,7 +129,7 @@ bool CAnalogSubsystem::init() {
 }
 
 bool CAnalogSubsystem::initBUSYinput() {
-    pinMode(BUSY_PIN, INPUT_PULLDOWN);
-    attachInterrupt(BUSY_PIN, adc_BUSY_falling_edge, FALLING);
+    pinMode(ADC_BUSY_GPIO, INPUT_PULLDOWN);
+    attachInterrupt(ADC_BUSY_GPIO, adc_BUSY_falling_edge, FALLING);
     return true;
 }
