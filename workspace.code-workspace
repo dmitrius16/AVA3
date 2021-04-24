@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"name": "TTGO_display",
+			"path": "../../../Documents/PlatformIO/Projects/TTGO_display"
+		}
+	],
+	"settings": {}
+}

@@ -144,10 +144,6 @@ void CConsole::parseRxCmd() {
 	{
 		if(findConsCmd(pStrCmd) != -1)
 		{
-			///!!! 
-			my_printf("Command %s find\r\n", pStrCmd);
-			///!!!
-			
 			m_curParamInd = 0;
 			//~~~ get command parameters
 			while(pStrCmd!=NULL)
@@ -273,9 +269,6 @@ bool CConsole::addConsCmd(const char* strName, ConsoleCmd *pCmdExec) {
 			}
 		}
 	}
-    ///!!! add cond cmd
-	my_printf("Add console command %s  len - %d\r\n", strName, strlen(strName));
-	///!!!
 
     char *pName = new char[strlen(strName) + 1];
 	

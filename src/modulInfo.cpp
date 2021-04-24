@@ -3,6 +3,7 @@
 #include "modulInfo.h"
 #include "Drivers/subsytemDAC_ADC.h"
 #include "Arduino.h"
+#include "esp_ipc.h"
 
 CModulInfo ava;
 
@@ -110,11 +111,26 @@ void CModulInfo::Command(int argc, char* argv[]) {
             my_printf("\trelay_name = {work, cell, curr10uA, curr100mA} {\"\", on, off}\r\n");
             my_printf("\tif command after relay name is empty toggle state is occured\r\n");
         } else if (!strcmp("adc_start", argv[1])) {
+            //test code execute on core 0 uncomment if nedded
+            //esp_err_t ret = esp_ipc_call(0, init_analog_subsystem, nullptr); //delegate task to core 0
+            //if (ret == ESP_OK) {
+            //    ret = esp_ipc_call(0, start_adc_asking, nullptr);
+            //}
+            init_analog_subsystem(nullptr);
+            start_adc_asking(nullptr);
+
+
+            //test code 
+            
+            
+            
+            
+            /* working code if it's needed uncoment
             CAnalogSubsystem& analogSubsystem = getAnalogSubsystemInstance();
             if (analogSubsystem.isInit() == false) {
                 bool res = analogSubsystem.init();
                 my_printf("Init analog subsystem %s\r\n", res ? "Ok" : "Err");
-            }
+            }*/
         } else {    //here relay command
             typedef struct {
                 const char *pName;
@@ -131,7 +147,7 @@ void CModulInfo::Command(int argc, char* argv[]) {
                             relayTurnOn(relayNames[i].relay);
                             my_printf("turn on relay\r\n");
                         } else if (!strcmp("off", argv[2])) {
-                            relayTurnOn(relayNames[i].relay);
+                            relayTurnOff(relayNames[i].relay);
                             my_printf("turn off relay\r\n");
                         } else {
                             my_printf("undefined commamd\r\n");
