@@ -1,5 +1,5 @@
 #pragma once
-
+#include <stdint.h>
 class CAnalogSubsystem;
 
 CAnalogSubsystem& getAnalogSubsystemInstance(void);
@@ -10,9 +10,11 @@ private:
 private:
     CAnalogSubsystem();
     bool initPereodicADCAsking();
-    bool initSpiSubsystem();
+    bool initSpiMasterSubsystem();
+    bool initSpiSlaveSubsystem();
     bool initBUSYinput();
     bool initDAC_AD5761();
+    bool sendCommandToDAC(uint32_t cmd);
 public:
     bool init();
     bool isInit() {return m_bInit;}

@@ -1,4 +1,5 @@
-#include <stdint.h>
+#include "DriverAD5761.h"
+#include <string.h>
 //AD5761 register adresses
 
 //Commands
@@ -70,4 +71,24 @@ uint32_t MakeCommand(uint8_t command_code, uint16_t data) {
     return code_sequence;
 }
 
+uint32_t GetFullResetCmdCode() {
+    return MakeCommand(SOFTWARE_FULL_RESET, 0);
+}
 
+uint32_t UseDefaultDACCfg() {
+    Control_reg ctrl_reg;
+    memset(&ctrl_reg, 0, sizeof(ctrl_reg)); 
+    ctrl_reg.RA = RA_m5V_p5V;
+    ctrl_reg.PV = PV_Mid_Scale;
+    ctrl_reg.ETS = Pwr_down_If_Temper_Exceeds_150;
+    ctrl_reg.B2C = Range_Twos_Complement_Coded;
+    ctrl_reg.OVR = Overrange_Disabled;
+    ctrl_reg.CV = CV_Mid_Scale;
+    uint16_t *pCtrlReg = (uint16_t*)&ctrl_reg;
+    return MakeCommand(WRITE_CONTROL_REG, *pCtrlReg);
+}
+
+uint32_t SetDACValue(uint16_t val) {
+    uint32_t res = MakeCommand(WRITE_AND_UPDATE_DAC_REG, val);
+    return res;
+}
