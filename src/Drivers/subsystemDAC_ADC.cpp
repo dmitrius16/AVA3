@@ -34,8 +34,8 @@ spi_device_handle_t g_spiMaster;
 
 
 ///!!!! debug code clear it
-int32_t adc_buffer_ch1[100];
-int32_t adc_buffer_ch2[100];
+int16_t adc_buffer_ch1[100];
+int16_t adc_buffer_ch2[100];
 int curInd = 0;
 volatile bool g_BusyFlag = false;
 // it's debug code above
@@ -108,17 +108,18 @@ void start_adc_asking(void *arg) {
             //debug
 
             
-            adc_buffer_ch1[curInd] = *pData;
+            adc_buffer_ch1[curInd] = SPI_SWAP_DATA_RX(*pData, 16);
             pData = (int32_t*)g_tr_slave_spi.rx_buffer;
-            adc_buffer_ch2[curInd] = *pData;
+            adc_buffer_ch2[curInd] = SPI_SWAP_DATA_RX(*pData, 16);
             curInd++;
         }
     }
     my_printf("SPI interrupt %d\r\n", g_isr_spi_counter);
     // output readed values
+
     my_printf("%6s %6s\r\n", "ch-1:", "ch-2");
     for (int i = 0; i < sizeof(adc_buffer_ch1)/sizeof(adc_buffer_ch1[0]); i++) {
-        my_printf("0x%06X 0x%06X\r\n", adc_buffer_ch1[i], adc_buffer_ch2[i]);
+        my_printf("0x%04X 0x%04X\r\n", adc_buffer_ch1[i], adc_buffer_ch2[i]);
     }
 }
 
@@ -204,9 +205,9 @@ bool CAnalogSubsystem::initSpiMasterSubsystem() {
             .command_bits = 0,       
             .address_bits = 0,
             .dummy_bits = 0,
-            .mode =  1, // set SPI_MODE 1, CLK - low, CLK rising edge - shifts data, CLK - falling edge - samples data
+            .mode =  2, // set SPI_MODE 1, CLK - low, CLK rising edge - shifts data, CLK - falling edge - samples data
             .duty_cycle_pos = 0, // 0 here is 50 % it is equal 128
-            .cs_ena_pretrans = 1, // amout spi bit cycles before transaction
+            .cs_ena_pretrans = 0,//### was 1 but wa not correct reading //amout spi bit cycles before transaction
             .cs_ena_posttrans = 0, //???  cs should state after transaction 
             .clock_speed_hz = 5 * 1000 * 1000,
             .input_delay_ns = 0, //???
@@ -238,7 +239,7 @@ bool CAnalogSubsystem::initSpiSlaveSubsystem() {
         .spics_io_num = ESP_SLAVE_CS_GPIO,
         .flags = 0,
         .queue_size = 1,
-        .mode = 1,
+        .mode = 2,
         .post_setup_cb = spi_slave
     };
     bool res = true;
