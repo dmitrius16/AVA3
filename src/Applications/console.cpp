@@ -39,14 +39,8 @@ int CConsole::printData(const char* format, va_list &arglist) {
 bool CConsole::OnTimer() {
     my_printf(pPromtStr);
 
-///!!! debug msg
-
     addConsCmd("?", this);
     addConsCmd("vers", this);
-
-///!!! 
-
-	uint32_t dbg_counter = 0;
 
     while(1) {
         taskDelayMs(1);
@@ -82,9 +76,10 @@ void CConsole::processStream() {
 		int i = m_curRcvIndex + cntRxSmbls - 1;
 		for(;i >= m_curRcvIndex; i--)
 		{		
-			if(RxBuffer[i] == '\r')
+			if(RxBuffer[i] == '\r') {
 				findReturnCarriage = true;
 				break;
+			}
 		}
 		
 	    bool findEscape = findEscapeSequence(cntRxSmbls);
@@ -137,7 +132,7 @@ bool CConsole::findEscapeSequence(uint8_t numRxBytes)
 
 void CConsole::parseRxCmd() {
     
-    memset(m_pCmdParams,0,sizeof(m_pCmdParams)/sizeof(m_pCmdParams[0]));
+    memset(m_pCmdParams,0,sizeof(m_pCmdParams));
 	char *pStrCmd = strtok(RxBuffer," ");
 	// find command
 	if(pStrCmd != NULL)

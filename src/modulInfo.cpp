@@ -53,7 +53,7 @@ bool CModulInfo::initRelaysPins() {
 }
 
 bool CModulInfo::initSpiSubsystem() {
-    
+    return true; 
 }
 
 

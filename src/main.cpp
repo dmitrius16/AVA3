@@ -9,10 +9,6 @@
 #define DEBUG_MODE
 
 void common_task(void *arg) {
-// now as stub
-#if defined(DEBUG_MODE)    
-    Serial.write("Create console task");
-#endif
     CConsole *pTask = reinterpret_cast<CConsole*>(arg);
     if(pTask->OnInitProcess()) {
         pTask->OnTimer();
