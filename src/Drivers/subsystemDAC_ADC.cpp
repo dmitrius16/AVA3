@@ -164,7 +164,7 @@ bool CAnalogSubsystem::initPereodicADCAsking() {
     // init timer
     ledc_timer_config_t ledc_timer_cfg = {
         .speed_mode = LEDC_HS_MODE,
-        .duty_resolution = LEDC_TIMER_13_BIT, //{} resolution of PWM duty - ???? read about this parameter
+        {.duty_resolution = LEDC_TIMER_13_BIT}, //{} resolution of PWM duty - ???? read about this parameter
         .timer_num = LEDC_HS_TIMER, //.clk_cfg = LEDC_AUTO_CLK,  // not worked at arduino framework
         .freq_hz = 1000,
     };

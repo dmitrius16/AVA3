@@ -10,7 +10,11 @@ const char* CConsole::pPromtStr = "\r\n" DEVICE_NAME " >>>";
 
 const char *CConsole::pLongInput = "r\nInput very long";
 
-static CConsole *g_Console;
+static CConsole g_Console;
+
+CConsole* GetConsoleInstance() {
+	return &g_Console;
+}
 
 CConsole::CConsole() : m_bMakeRepeatCalls(false),m_bMakeClearDisplay(false),m_bMakeUpdateDisplay(false),m_cmdEmptyInd(0),m_curCmdInd(-1),m_curParamInd(0),
 					   m_repeatCallCnt(0)
@@ -24,9 +28,6 @@ bool CConsole::init() {
 	addConsCmd("?", this);
 	addConsCmd("vers", this);	
 	m_bInit = true;
-
-	g_Console = this;
-
     return true;
 }
 
@@ -257,7 +258,9 @@ void CConsole::callCmdMngr() {
 
 bool CConsole::addConsCmd(const char* strName, ConsoleCmd *pCmdExec) {
     if(m_cmdEmptyInd == sizeof(m_ConsoleCmdBuf)/sizeof(m_ConsoleCmdBuf[0]))	{	
-		my_printf("Can't add cmd %s cmd buffer is full\r\n",strName);
+		//my_printf can't call here, try Serial or log
+		///### my_printf("Can't add cmd %s cmd buffer is full\r\n",strName);
+		
 		return false;
 	}
 	//find if command already exsists
@@ -266,7 +269,8 @@ bool CConsole::addConsCmd(const char* strName, ConsoleCmd *pCmdExec) {
 		{
 			if(!strcmp(m_ConsoleCmdBuf[i].cmdName,strName))
 			{
-				my_printf("Command %s already exists\r\n");
+				// my_printf can't call here, try Serial or log
+				//###my_printf("Command %s already exists\r\n");
 				return false;
 			}
 		}
@@ -288,14 +292,14 @@ bool CConsole::addConsCmd(const char* strName, ConsoleCmd *pCmdExec) {
 // this Command used only for test
 void CConsole::Command(int argc, char* argv[])
 {
-    if(!strcmp(argv[0],"vers"))	{
+    if(!strcmp(argv[0], "vers"))	{
 		my_printf("System CPU: esp32 Wrover\r\n");
 		my_printf("Project: %s\r\n", DEVICE_NAME );
     ///    my_printf("Version: %s\r\n", GetVersionSt ring());
     ///    my_printf("Hardware vers: %s\r\n", GetHardwareVersion());
     ///    my_printf("Vers String: %s\r\n", GetFullVersionString());
 	}
-    if (!strcmp(argv[0],"?")) {
+    if (!strcmp(argv[0], "?")) {
         for (int i = 0; i < m_cmdEmptyInd;i++) {
             my_printf("%s\r\n",m_ConsoleCmdBuf[i].cmdName);
         }
@@ -304,25 +308,25 @@ void CConsole::Command(int argc, char* argv[])
 
 bool add_console_command(const char* strName,ConsoleCmd *pCmdExec)
 {
-	return g_Console->addConsCmd(strName, pCmdExec);
+	return g_Console.addConsCmd(strName, pCmdExec);
 }
 
 
 void my_printf(const char* format, ...)
 {
-    CScopedCritSec critSec(g_Console->m_Lock);
-    if (g_Console->isInit()) {
+    if (g_Console.isInit()) {
+    	CScopedCritSec critSec(g_Console.m_Lock);
         va_list paramList;
         va_start(paramList, format);
-	    g_Console->printData(format, paramList);
+	    g_Console.printData(format, paramList);
         va_end(paramList);   
     }
 }
 
 void clear_screen()
 {
-	CScopedCritSec critSec(g_Console->m_Lock);
-	if (g_Console->isInit()) {
-		g_Console->m_pStream->write(0xC);
+	if (g_Console.isInit()) {
+		CScopedCritSec critSec(g_Console.m_Lock);
+		g_Console.m_pStream->write(0xC);
 	}
 }

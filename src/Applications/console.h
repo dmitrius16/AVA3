@@ -89,5 +89,6 @@ public:
     
 };
 
+CConsole* GetConsoleInstance();
 
 

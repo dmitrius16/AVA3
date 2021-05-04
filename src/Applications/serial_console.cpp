@@ -5,11 +5,10 @@
 CSerialConsole g_SerialConsole;
 
 bool CSerialConsole::on_init_process(void *param) {
-    m_pConsTask = new CConsole();
+    m_pConsTask = GetConsoleInstance();
     m_pConsTask->init();
     m_pConsTask->setStreamInterface(&Serial);
     m_taskFunction = &CConsole::processStream;
-    Serial.println("Init serial console finished");
     return true;
 }
 

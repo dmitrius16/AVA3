@@ -24,11 +24,11 @@ void setup() {
   
   // here we need create console application  
   Serial.begin(115200);
-  ava.init();
 
+  ava.init();
 #if defined(CONFIG_USE_WIFI_CONSOLE)
     Serial.println("Start wifi console\r\n");
-  //  xTaskCreatePinnedToCore(common_task, "Console", 4096, &g_wifiConsole, 5, NULL, 1);
+    xTaskCreatePinnedToCore(common_task, "Console", 4096, &g_wifiConsole, 5, NULL, 1);
 #else // here we use serial for console
     Serial.println("Create Serial Console\r\n");
     xTaskCreatePinnedToCore(common_task, "Console", 4096, &g_SerialConsole, 5, NULL, 1); // 1 - number core so you need carefully understand number!!!  // we need implement function her 
@@ -39,6 +39,6 @@ void loop() {
   // put your main code here, to run repeatedly:
     taskDelayMs(1000);
 #if defined(DEBUG_MODE)
-  Serial.write("Main arduino loop\r\n");
+  ////Serial.write("Main arduino loop\r\n");
 #endif
 }
