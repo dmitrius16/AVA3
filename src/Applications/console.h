@@ -24,11 +24,22 @@ typedef struct {
 bool add_console_command(const char *strName, ConsoleCmd *pCmdExec);
 
 class Stream;
+
+/*
+class CConsoleInterface {
+protected:
+    virtual int printData(const char* format, va_list &arglist) = 0; 
+public:
+    virtual bool isInit() = 0;
+};*/
+
+class CConsole;
+typedef void (CConsole::*ConsoleTask)(void);
+
 class CConsole : public ConsoleCmd {
     friend void my_printf(const char* format, ...);
     friend void clear_screen();
     friend bool add_console_command(const char *strName, ConsoleCmd *pCmdExec);
-    typedef void (CConsole::*ConsoleTask)();
 private:
     bool m_bInit;
     int m_curRcvIndex;
@@ -41,7 +52,6 @@ private:
     int m_repeatCallCnt;
 
     Stream *m_pStream;
-    ConsoleTask m_pConsoleTask;
 
     char TxBuffer[CONSOLE_BUFFER_SIZE];
     char RxBuffer[CONSOLE_BUFFER_SIZE];
@@ -53,8 +63,7 @@ private:
 public:
     CMutex m_Lock;
 private:
-    int printData(const char* format, va_list &arglist);
-    void processStream();
+    
 
     bool addConsCmd(const char *strName, ConsoleCmd *pCmdExec);
     int findConsCmd(const char *strName);
@@ -64,18 +73,21 @@ private:
     void callCmd();
     void parseRxCmd();
     bool findEscapeSequence(uint8_t numRxBytes);
+    int  printData(const char* format, va_list &arglist);
+protected:
 public:
     CConsole();
-    bool OnInitProcess(void *param = nullptr);
-    bool OnTimer();
-
+    bool init();
+    void processStream();
+    void printPrompt();
     void clearScreen();
     void moveCursorAtStart();
     void enableCursor();
     void disableCursor();
-    bool isConsoleInit(){return m_bInit;}
+    void setStreamInterface(Stream *pStream) {m_pStream = pStream;}
+    bool isInit()  {return m_bInit;}
+    
 };
 
-extern CConsole g_Console;
 
 

@@ -1,11 +1,11 @@
 {
 	"folders": [
 		{
-			"path": "."
+			"path": ".."
 		},
 		{
-			"name": "TTGO_display",
-			"path": "../../../Documents/PlatformIO/Projects/TTGO_display"
+			"name": "AVA3TestApp",
+			"path": "."
 		}
 	],
 	"settings": {}

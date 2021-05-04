@@ -6,36 +6,40 @@
 #include "../modulInfo.h"
 #include "Arduino.h"
 
-CConsole g_Console;
-
 const char* CConsole::pPromtStr = "\r\n" DEVICE_NAME " >>>";
 
 const char *CConsole::pLongInput = "r\nInput very long";
 
+static CConsole *g_Console;
+
 CConsole::CConsole() : m_bMakeRepeatCalls(false),m_bMakeClearDisplay(false),m_bMakeUpdateDisplay(false),m_cmdEmptyInd(0),m_curCmdInd(-1),m_curParamInd(0),
 					   m_repeatCallCnt(0)
 {
-    m_pConsoleTask = &CConsole::processStream;
     m_bInit = false;
 }
 
 
-bool CConsole::OnInitProcess(void *param) {
+bool CConsole::init() {
     m_Lock.create();
-    m_pStream = &Serial; //!!!Arduino call here arduino instance
-	
-	//Serial.begin(115200);
- 
-    m_bInit = true;
+	addConsCmd("?", this);
+	addConsCmd("vers", this);	
+	m_bInit = true;
+
+	g_Console = this;
+
     return true;
 }
 
 int CConsole::printData(const char* format, va_list &arglist) {
     int size = vsnprintf(TxBuffer, CONSOLE_BUFFER_SIZE-1, format, arglist);
-    m_pStream->write(TxBuffer,size);  //!!!Arduino call here we need 
+    m_pStream->write(TxBuffer,size); 
     return size;
 }
 
+void CConsole::printPrompt() {
+	my_printf(pPromtStr);
+}
+/*
 bool CConsole::OnTimer() {
     my_printf(pPromtStr);
 
@@ -46,7 +50,7 @@ bool CConsole::OnTimer() {
         taskDelayMs(1);
         (this->*m_pConsoleTask)();
     }
-}
+}*/
 
 void CConsole::processStream() {
     uint8_t cntRxSmbls = m_pStream->available();
@@ -74,12 +78,17 @@ void CConsole::processStream() {
         
 		bool findReturnCarriage = false;
 		int i = m_curRcvIndex + cntRxSmbls - 1;
-		for(;i >= m_curRcvIndex; i--)
-		{		
-			if(RxBuffer[i] == '\r') {
+		for (;i >= m_curRcvIndex; i--) {		
+			if (RxBuffer[i] == '\r') {
 				findReturnCarriage = true;
 				break;
 			}
+			// find backspace
+			/*
+			if (RxBuffer[i] == '\b') {
+				
+			}
+			*/
 		}
 		
 	    bool findEscape = findEscapeSequence(cntRxSmbls);
@@ -247,14 +256,12 @@ void CConsole::callCmdMngr() {
 }
 
 bool CConsole::addConsCmd(const char* strName, ConsoleCmd *pCmdExec) {
-    if(m_cmdEmptyInd == sizeof(m_ConsoleCmdBuf)/sizeof(m_ConsoleCmdBuf[0]))
-	{	
+    if(m_cmdEmptyInd == sizeof(m_ConsoleCmdBuf)/sizeof(m_ConsoleCmdBuf[0]))	{	
 		my_printf("Can't add cmd %s cmd buffer is full\r\n",strName);
 		return false;
 	}
 	//find if command already exsists
-	if(m_cmdEmptyInd != 0)
-	{
+	if (m_cmdEmptyInd != 0) {
 		for(int i = 0;i < m_cmdEmptyInd; i++)
 		{
 			if(!strcmp(m_ConsoleCmdBuf[i].cmdName,strName))
@@ -279,18 +286,17 @@ bool CConsole::addConsCmd(const char* strName, ConsoleCmd *pCmdExec) {
 }
 
 // this Command used only for test
-void CConsole::Command(int argc,char* argv[])
+void CConsole::Command(int argc, char* argv[])
 {
     if(!strcmp(argv[0],"vers"))	{
 		my_printf("System CPU: esp32 Wrover\r\n");
 		my_printf("Project: %s\r\n", DEVICE_NAME );
-    ///    my_printf("Version: %s\r\n", GetVersionString());
+    ///    my_printf("Version: %s\r\n", GetVersionSt ring());
     ///    my_printf("Hardware vers: %s\r\n", GetHardwareVersion());
     ///    my_printf("Vers String: %s\r\n", GetFullVersionString());
 	}
-    if(!strcmp(argv[0],"?")) {
-        for(int i = 0; i < m_cmdEmptyInd;i++)
-        {
+    if (!strcmp(argv[0],"?")) {
+        for (int i = 0; i < m_cmdEmptyInd;i++) {
             my_printf("%s\r\n",m_ConsoleCmdBuf[i].cmdName);
         }
     }
@@ -298,28 +304,25 @@ void CConsole::Command(int argc,char* argv[])
 
 bool add_console_command(const char* strName,ConsoleCmd *pCmdExec)
 {
-	return g_Console.addConsCmd(strName,pCmdExec);
+	return g_Console->addConsCmd(strName, pCmdExec);
 }
 
 
 void my_printf(const char* format, ...)
 {
-    if(g_Console.isConsoleInit())
-    {
-        CScopedCritSec critSec(g_Console.m_Lock);
+    CScopedCritSec critSec(g_Console->m_Lock);
+    if (g_Console->isInit()) {
         va_list paramList;
         va_start(paramList, format);
-//        int iResult = g_Console.printData(format, paramList);
-	    g_Console.printData(format, paramList);
+	    g_Console->printData(format, paramList);
         va_end(paramList);   
     }
 }
 
 void clear_screen()
 {
-	if(g_Console.isConsoleInit())
-    {
-		CScopedCritSec critSec(g_Console.m_Lock);
-		g_Console.m_pStream->write(0xC);
+	CScopedCritSec critSec(g_Console->m_Lock);
+	if (g_Console->isInit()) {
+		g_Console->m_pStream->write(0xC);
 	}
 }

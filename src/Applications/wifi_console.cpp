@@ -1,11 +1,12 @@
 
-#include <WiFi.h>
+#include "WiFi.h"
 #include "wifi_console.h"
 
-const char* ssid     = "yourssid";
-const char* password = "yourpasswd";
+const char* ssid     = "SeaWolfNetwork";
+const char* password = "sysoev1984";
 
-WiFiServer server(23);  // port must be 23
+//WiFiServer server(23);  // port must be 23
+WiFiConsole g_wifiConsole;
 
 bool WiFiConsole::on_init_process(void* param) {
     
@@ -21,7 +22,7 @@ bool WiFiConsole::on_init_process(void* param) {
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
     
-    server.begin();
+    //server.begin();
     
     return true;
 }
@@ -29,8 +30,13 @@ bool WiFiConsole::on_init_process(void* param) {
 int value = 0;
 
 bool WiFiConsole::run_task() {
- WiFiClient client = server.available();   // listen for incoming clients
-
+  
+  WiFiServer server(m_port);
+  server.begin();
+  
+  WiFiClient client = server.available();   // listen for incoming clients
+  
+  
   if (client) {                             // if you get a client,
     Serial.println("New Client.");           // print a message out the serial port
     String currentLine = "";                // make a String to hold incoming data from the client
@@ -77,4 +83,5 @@ bool WiFiConsole::run_task() {
     client.stop();
     Serial.println("Client Disconnected.");
   }
+  return true;
 }
