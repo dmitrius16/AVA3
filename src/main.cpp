@@ -9,7 +9,7 @@
 #include "Applications/wifi_console.h"
 
 #define DEBUG_MODE
-#define CONFIG_USE_WIFI_CONSOLE
+//#define CONFIG_USE_WIFI_CONSOLE
 
 void common_task(void *arg) {
     RunnableTask *pTask = reinterpret_cast<RunnableTask*>(arg);

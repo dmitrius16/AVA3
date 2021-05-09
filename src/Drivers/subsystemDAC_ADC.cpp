@@ -119,7 +119,7 @@ void start_adc_asking(void *arg) {
 
     my_printf("%6s %6s\r\n", "ch-1:", "ch-2");
     for (int i = 0; i < sizeof(adc_buffer_ch1)/sizeof(adc_buffer_ch1[0]); i++) {
-        my_printf("0x%04X 0x%04X\r\n", adc_buffer_ch1[i], adc_buffer_ch2[i]);
+        my_printf("%05d %05d\r\n", adc_buffer_ch1[i], adc_buffer_ch2[i]);
     }
 }
 
@@ -260,7 +260,7 @@ bool CAnalogSubsystem::initDAC_AD5761() {
         dac_cmd = UseDefaultDACCfg();
         res = sendCommandToDAC(dac_cmd);
         if (res) {
-            dac_cmd = SetDACValue(0x3fff);
+            dac_cmd = SetDACValue(0x1000);
 
             res = sendCommandToDAC(dac_cmd);
         }
