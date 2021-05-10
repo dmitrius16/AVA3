@@ -1,30 +1,40 @@
 #pragma once
 
-enum class AVA3Commands {
-    Cmd_calc_data_pkt_count = 0xf0, 
-    Cmd_start_exp           = 0xf1,
-    Cmd_query_state         = 0xf2,
-    Cmd_query_status_as     = 0xf3,
-    Cmd_get_data_pkt        = 0xf4,
-    Cmd_init                = 0xf5,
-    Cmd_get_info            = 0xf6,
-    Cmd_rep_get_data_pkt    = 0xf7,
-    Cmd_set_data_pkt_idx    = 0xf8,
-    Cmd_set_params          = 0xfa,
-    Cmd_get_as_param        = 0xfb,
-    Cmd_terminate_exp       = 0xff
+class CAVA3StateMachine {
+private:
+    bool m_bWaitingCmd;
+    bool m_bSendingDataPkt;
+    bool m_bExperimentOn;
+    bool m_bSendingResponse;
+    bool m_bCyclesPhase;
+    bool m_bDebugMode;
+//experiment parameters:  ### may be declare this variables in separate class
+
+    uint8_t n1; 
+    uint8_t n2;
+    uint8_t n3;
+    uint8_t n_count;
+    uint32_t m_cntExpTermination;
+//
+    Stream *pLink;
+private:
+    void terminateExp() {
+        n1 = n2 = n3 = n_count = 0;
+        m_bSendingDataPkt = false;
+        m_bExperimentOn = false;
+        m_bSendingResponse = false;
+        m_cntExpTermination++;
+    }
+public:
+    CAVA3StateMachine(): m_bWaitingCmd(true), m_bSendingDataPkt(false), m_bExperimentOn(false), m_bSendingRespond(false), m_bCyclesPhase(false),
+    m_bDebugMode(false), n1(0),n2(0), n3(0), n_count(0), m_cntExpTermination(0) {
+
+    }
+    bool init();
+    bool isWaitingCmd() {return m_bWaitingCmd;} 
+    void processLink();
+
 };
 
 
-enum class AVA3Answers {
-    Ans_calc_data_pkt_count = 0x1,
-    Ans_start_exp           = 0x2,
-    Ans_query_state         = 0x3,
-    Ans_terminate_exp       = 0xA,
-    Ans_init                = 0xf5,
-    Ans_rep_get_data_pkt    = 0xf7,
-    Ans_set_data_pkt_idx    = 0xf8,
-    Ans_set_params          = 0xfa,
-    Ans_get_as_param        = 0xfb,
-};
 
