@@ -54,7 +54,7 @@ bool CConsole::OnTimer() {
 }*/
 
 void CConsole::processStream() {
-    uint8_t cntRxSmbls = m_pStream->available();
+    int cntRxSmbls = m_pStream->available();
 
     if (cntRxSmbls != 0) {
         m_bMakeRepeatCalls = m_bMakeClearDisplay = false;

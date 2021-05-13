@@ -2,7 +2,6 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include "MyLib/OSWrappers.h"
-
 void my_printf(const char* format, ...);
 void clear_screen();
 

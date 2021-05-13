@@ -7,9 +7,10 @@
 #include "Applications/runnable_task.h"
 #include "Applications/serial_console.h"
 #include "Applications/wifi_console.h"
+#include "Applications/AVA3.h"
 
 #define DEBUG_MODE
-//#define CONFIG_USE_WIFI_CONSOLE
+#define CONFIG_USE_WIFI_CONSOLE
 
 void common_task(void *arg) {
     RunnableTask *pTask = reinterpret_cast<RunnableTask*>(arg);
@@ -33,6 +34,8 @@ void setup() {
     Serial.println("Create Serial Console\r\n");
     xTaskCreatePinnedToCore(common_task, "Console", 4096, &g_SerialConsole, 5, NULL, 1); // 1 - number core so you need carefully understand number!!!  // we need implement function her 
 #endif 
+
+    xTaskCreatePinnedToCore(common_task, "AVA3Link", 4096, &g_AVA3StateMachine, 4, NULL, 1);
 }
 
 void loop() {
