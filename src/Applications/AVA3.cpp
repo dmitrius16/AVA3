@@ -10,6 +10,10 @@ static uint8_t rx_buffer[40];
 //constants
 const uint16_t IP_EXP_ON = 1;
 
+//rx parameters
+const int g_length_init_param = 9;
+const int g_length_set_param = 4;
+
 
 const char* GetNameCommand(uint8_t code) {
     static const char *pCmdNames[] = {"CMD_CALC_DATA_PKT_COUNT", "CMD_START_EXP", "CMD_QUERY_STATE",
@@ -71,17 +75,31 @@ void CAVA3StateMachine::processWaitingCmdState() {
     if (pLink->available()) {
         uint8_t read_byte = pLink->read();
         AVA3Commands rxCmd = (AVA3Commands)read_byte;
+        bool answerAvaliable = false;
+        uint8_t answer_code = 0;
+
+        if (isDebugMode()) {
+            const char* pCmdName = GetNameCommand(read_byte);
+            my_printf("Rx command - %s code: 0x%X\r\n", pCmdName, read_byte);
+        }
+
         switch (rxCmd) {
         case AVA3Commands::Cmd_terminate_exp: 
             terminateExp();
-            pLink->write((uint8_t)AVA3Answers::Ans_terminate_exp);
+
+            answerAvaliable = true;
+            answer_code = (uint8_t)AVA3Answers::Ans_terminate_exp; 
+
             break;
         case AVA3Commands::Cmd_calc_data_pkt_count:
             // 
             // command hasn't implemented yet!!!
             // SET_DATA_SENFING_STATE
             // DataPtr = StartDataPtr
-            pLink->write((uint8_t)AVA3Answers::Ans_calc_data_pkt_count);
+
+            answerAvaliable = true;
+            answer_code = (uint8_t)AVA3Answers::Ans_calc_data_pkt_count;
+
             break;
         case AVA3Commands::Cmd_start_exp:
             // command hasn't implemented yet!!!
@@ -89,17 +107,29 @@ void CAVA3StateMachine::processWaitingCmdState() {
             m_bExperimentOn = true;
             //ExpSetupOffset = RAM_BASE
             //RAMPtr = ncount_w = nw = 0;
-            pLink->write((uint8_t)AVA3Answers::Ans_start_exp);
+            
+            answerAvaliable = true;
+            answer_code = (uint8_t)AVA3Answers::Ans_start_exp;
+
+
+
             break;
         case AVA3Commands::Cmd_query_state: //implement first in queue!!!
             // command hasn't implemented yet
             // SendByteIdx = RespSendByteIdx = 0;
             m_bSendingResponse = true;
-            pLink->write((uint8_t)AVA3Answers::Ans_query_state);
+            
+            
+            answerAvaliable = true;
+            answer_code = (uint8_t)AVA3Answers::Ans_query_state;
+
             break;
         case AVA3Commands::Cmd_query_status_as:
-            //sample_ok - variable in ofirginal always set to false
-            pLink->write((uint8_t)0);
+            //sample_ok - variable in orirginal always set to false
+            answerAvaliable = true;
+            answer_code = 0;
+            
+            
             break;
         case AVA3Commands::Cmd_get_data_pkt:
             m_bSendingDataPkt = true;
@@ -120,48 +150,98 @@ void CAVA3StateMachine::processWaitingCmdState() {
                 m_curCmd = rxCmd;
             }
             break;
+        default:
+            if (isDebugMode()) {
+                my_printf("Unknown command received\r\n");
+            }
+            break;
         } 
+        if (answerAvaliable) {
+            pLink->write(answer_code);
+            if (isDebugMode()) {
+                my_printf("Answer code: %d\r\n", answer_code);
+            }
+        }
+    }
+}
+
+void CAVA3StateMachine::errRxCmdParameters(int waitLen, int RxLen) {
+    
+    m_bWaitingCmd = true;
+    if (isDebugMode())
+        my_printf("Error rx cmd parameters. Wait %d bytes, received %d\r\n", waitLen, RxLen);    
+}
+
+
+void CAVA3StateMachine::outputCmdParamDbgFunc(int param_length) {
+    char temp[80] = {0};
+    for (int i = 0; i < param_length; i++) {
+        sprintf(temp, "%s 0x%X",temp, rx_buffer[i]);
+    }
+    strcat(temp, "\r\n");
+    my_printf(temp);
+}
+
+
+void CAVA3StateMachine::parseInitParam() {
+    if (isDebugMode()) {
+        outputCmdParamDbgFunc(g_length_init_param);
+    }
+    //TODO logic parse init command
+
+}
+
+void CAVA3StateMachine::parseSetParam() {
+    if (isDebugMode()) {
+        outputCmdParamDbgFunc(g_length_set_param);
     }
 }
 
 void CAVA3StateMachine::processRxCmdParamState() {
     int rxBytes = 0;
-    switch(m_curCmd) {
+    int wait_length_rx = 0;
+    switch (m_curCmd) {
         case AVA3Commands::Cmd_init:
-            rxBytes = pLink->readBytes(rx_buffer, 9);
-            if (rxBytes == 9) {
-                parseInitParam();
+            wait_length_rx = g_length_init_param;
+            rxBytes = pLink->readBytes(rx_buffer, wait_length_rx);
+            if (rxBytes == wait_length_rx) {
+                parseInitParam(); 
                 m_bWaitingCmd = true;
                 pLink->write((uint8_t)AVA3Answers::Ans_init);
-            } // else {                    
-                // error occur in rx parameters
-            //}
+            }  else {                    
+                errRxCmdParameters(wait_length_rx, rxBytes);
+            }
         break;
         case AVA3Commands::Cmd_get_as_param:
-            rxBytes = pLink->readBytes(rx_buffer, 4);
-            if (rxBytes == 4) {
+            wait_length_rx = 4;
+            rxBytes = pLink->readBytes(rx_buffer, wait_length_rx);
+            
+            if (rxBytes == wait_length_rx) {
                 parseGetAsParam();
                 m_bExperimentOn = m_bWaitingCmd = true;
                 //sample_ok = false;
                 pLink->write((uint8_t)AVA3Answers::Ans_get_as_param); 
-            } // else {
-                // error occur in rx parameters
-            //}
+            }  else {
+                errRxCmdParameters(wait_length_rx, rxBytes);
+            }
         break;
         case AVA3Commands::Cmd_set_params:
             //ps = RAM_BASE_PTR;
-            rxBytes = pLink->readBytes(rx_buffer, 4);
-            if (rxBytes == 4) {                    
+            wait_length_rx = g_length_set_param; 
+            rxBytes = pLink->readBytes(rx_buffer, wait_length_rx);
+            
+            if (rxBytes == wait_length_rx) {                    
                parseSetParam();
                m_bWaitingCmd = true;
                pLink->write((uint8_t)AVA3Answers::Ans_set_params); 
-            } // else {
-                // error occur in rx parameters
-            //}
+            } else {
+                errRxCmdParameters(wait_length_rx, rxBytes);
+            }
         break;
         case AVA3Commands::Cmd_get_info:
-            rxBytes = pLink->readBytes(rx_buffer, 2);
-            if (rxBytes == 2) {
+            wait_length_rx = 2; 
+            rxBytes = pLink->readBytes(rx_buffer, wait_length_rx);
+            if (rxBytes == wait_length_rx) {
                 parseGetInfo();
                 uint8_t txVal = 0;
                 if (m_GetInfoParam == IP_EXP_ON) {
@@ -169,13 +249,14 @@ void CAVA3StateMachine::processRxCmdParamState() {
                 }
                 pLink->write(txVal);
                 m_bWaitingCmd = true;
-            } // else {
-                // error occur in rx parameters
-            // }
+            } else {
+                errRxCmdParameters(wait_length_rx, rxBytes);
+            }
         break;
         case AVA3Commands::Cmd_set_data_pkt_idx:
-            rxBytes = pLink->readBytes(rx_buffer, 2);
-            if (rxBytes == 2) {
+            wait_length_rx = 2;
+            rxBytes = pLink->readBytes(rx_buffer, wait_length_rx);
+            if (rxBytes == wait_length_rx) {
                 parseSetDataPktIdx();
                 //DataSentBytes = DATA_PACKET_SIZE * PktIndex;
                 //                DataPtr = START_DATA_PTR + DataSentBytes;
@@ -183,7 +264,12 @@ void CAVA3StateMachine::processRxCmdParamState() {
                 //                SET_DATA_SENDING_STATE;
                 m_bWaitingCmd = true;
                 pLink->write((uint8_t)AVA3Answers::Ans_set_data_pkt_idx);
+            } else {
+                errRxCmdParameters(wait_length_rx, rxBytes);
             }
+        break;
+        default:
+        
         break;
     }
 }
@@ -194,9 +280,12 @@ bool CAVA3StateMachine::on_init_process(void *param) {
 }
 
 bool CAVA3StateMachine::run_task() {
-    uint8_t rxBuf[80];
+    //uint8_t rxBuf[80];
     while(true) {
         taskDelayMs(1);
+        processLink();
+        
+        /*
         int numRXBytes =  pLink->available();
         if (numRXBytes) {
             numRXBytes = pLink->readBytes(rxBuf, 80);
@@ -205,7 +294,8 @@ bool CAVA3StateMachine::run_task() {
                 my_printf("0x%X ", rxBuf[i]);
             }
             my_printf("\r\n");
-        }
+        }*/
     }
     return true;
 }
+

@@ -22,7 +22,6 @@ private:
 // counters.... and other staff
     uint8_t m_DataPktSendBytes;
     uint16_t m_GetInfoParam;
-
 // 
     AVA3Commands m_curCmd;
     
@@ -35,17 +34,19 @@ private:
         m_bSendingResponse = false;
         m_cntExpTermination++;
     }
+    void outputCmdParamDbgFunc(int param_length);
     void processWaitingCmdState();
     void processRxCmdParamState();
-    void parseInitParam();
-    void parseGetAsParam();
+    void parseInitParam(); 
+    void parseGetAsParam() {}
     void parseSetParam();
-    void parseGetInfo();
-    void parseSetDataPktIdx();
-
+    void parseGetInfo() {}
+    void parseSetDataPktIdx() {}
+    bool isDebugMode() {return m_bDebugMode;}
+    void errRxCmdParameters(int waitLen, int RxLen);
 public:
     CAVA3StateMachine(): m_bWaitingCmd(true), m_bSendingDataPkt(false), m_bExperimentOn(false), m_bSendingResponse(false), m_bCyclesPhase(false),
-    m_bDebugMode(false), n1(0),n2(0), n3(0), n_count(0), m_cntExpTermination(0), m_DataPktSendBytes(0), m_GetInfoParam(0),
+    m_bDebugMode(true), n1(0),n2(0), n3(0), n_count(0), m_cntExpTermination(0), m_DataPktSendBytes(0), m_GetInfoParam(0),
     m_curCmd(AVA3Commands::Cmd_undefined_cmd) {
 
     }
