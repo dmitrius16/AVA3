@@ -1,9 +1,9 @@
-#include "AVA3.h"
+#include "AVA3LinkLayer.h"
 #include "Arduino.h"
 #include "console.h"
 #include "MyLib/OSWrappers.h"
 
-CAVA3StateMachine g_AVA3StateMachine;
+CAVA3LinkLayer g_AVA3StateMachine;
 static uint8_t rx_buffer[40];
 
 
@@ -14,6 +14,7 @@ const uint16_t IP_EXP_ON = 1;
 const int g_length_init_param = 9;
 const int g_length_set_param = 4;
 
+uint8_t g_MemoryBuf[32767];
 
 const char* GetNameCommand(uint8_t code) {
     static const char *pCmdNames[] = {"CMD_CALC_DATA_PKT_COUNT", "CMD_START_EXP", "CMD_QUERY_STATE",
@@ -55,15 +56,20 @@ const char* GetAnswerNames(uint8_t code) {
 
 
 
-bool CAVA3StateMachine::init() {
+bool CAVA3LinkLayer::init() {
     pLink = &Serial; 
     //
     // Add here some init code for AVA state machine
     //
+    // debug code blow - clear it
+    
+    /*for (int i = 0; i < sizeof(g_MemoryBuf); i++) {
+        g_MemoryBuf[i] = 0xaa;
 
+    }*/
     return true;
 }
-void CAVA3StateMachine::processLink() {
+void CAVA3LinkLayer::processLink() {
     if (isWaitingCmd()) {    
         processWaitingCmdState();
     } else {
@@ -71,7 +77,7 @@ void CAVA3StateMachine::processLink() {
     }
 }
 
-void CAVA3StateMachine::processWaitingCmdState() {
+void CAVA3LinkLayer::processWaitingCmdState() {
     if (pLink->available()) {
         uint8_t read_byte = pLink->read();
         AVA3Commands rxCmd = (AVA3Commands)read_byte;
@@ -165,7 +171,7 @@ void CAVA3StateMachine::processWaitingCmdState() {
     }
 }
 
-void CAVA3StateMachine::errRxCmdParameters(int waitLen, int RxLen) {
+void CAVA3LinkLayer::errRxCmdParameters(int waitLen, int RxLen) {
     
     m_bWaitingCmd = true;
     if (isDebugMode())
@@ -173,7 +179,7 @@ void CAVA3StateMachine::errRxCmdParameters(int waitLen, int RxLen) {
 }
 
 
-void CAVA3StateMachine::outputCmdParamDbgFunc(int param_length) {
+void CAVA3LinkLayer::outputCmdParamDbgFunc(int param_length) {
     char temp[80] = {0};
     for (int i = 0; i < param_length; i++) {
         sprintf(temp, "%s 0x%X",temp, rx_buffer[i]);
@@ -183,7 +189,7 @@ void CAVA3StateMachine::outputCmdParamDbgFunc(int param_length) {
 }
 
 
-void CAVA3StateMachine::parseInitParam() {
+void CAVA3LinkLayer::parseInitParam() {
     if (isDebugMode()) {
         outputCmdParamDbgFunc(g_length_init_param);
     }
@@ -191,13 +197,13 @@ void CAVA3StateMachine::parseInitParam() {
 
 }
 
-void CAVA3StateMachine::parseSetParam() {
+void CAVA3LinkLayer::parseSetParam() {
     if (isDebugMode()) {
         outputCmdParamDbgFunc(g_length_set_param);
     }
 }
 
-void CAVA3StateMachine::processRxCmdParamState() {
+void CAVA3LinkLayer::processRxCmdParamState() {
     int rxBytes = 0;
     int wait_length_rx = 0;
     switch (m_curCmd) {
@@ -274,12 +280,12 @@ void CAVA3StateMachine::processRxCmdParamState() {
     }
 }
 
-bool CAVA3StateMachine::on_init_process(void *param) {
+bool CAVA3LinkLayer::on_init_process(void *param) {
     init();
     return true;
 }
 
-bool CAVA3StateMachine::run_task() {
+bool CAVA3LinkLayer::run_task() {
     //uint8_t rxBuf[80];
     while(true) {
         taskDelayMs(1);
