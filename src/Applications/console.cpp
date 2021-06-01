@@ -17,7 +17,7 @@ CConsole* GetConsoleInstance() {
 }
 
 CConsole::CConsole() : m_bMakeRepeatCalls(false),m_bMakeClearDisplay(false),m_bMakeUpdateDisplay(false),m_cmdEmptyInd(0),m_curCmdInd(-1),m_curParamInd(0),
-					   m_repeatCallCnt(0)
+					   m_repeatCallCnt(0), m_pStream(nullptr)
 {
     m_bInit = false;
 }
@@ -32,9 +32,13 @@ bool CConsole::init() {
 }
 
 int CConsole::printData(const char* format, va_list &arglist) {
-    int size = vsnprintf(TxBuffer, CONSOLE_BUFFER_SIZE-1, format, arglist);
-    m_pStream->write(TxBuffer,size); 
-    return size;
+	int res = 0;
+	if (m_pStream != nullptr) {
+    	int size = vsnprintf(TxBuffer, CONSOLE_BUFFER_SIZE-1, format, arglist);
+    	m_pStream->write(TxBuffer,size); 
+		res = size;
+	}
+    return res;
 }
 
 void CConsole::printPrompt() {

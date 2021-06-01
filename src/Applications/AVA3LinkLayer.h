@@ -58,5 +58,5 @@ public:
     virtual bool on_init_process(void *param=nullptr);
 };
 
-extern CAVA3LinkLayer g_AVA3StateMachine;
+extern CAVA3LinkLayer g_AVA3Link;
 

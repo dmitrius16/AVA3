@@ -3,7 +3,7 @@
 #include "console.h"
 #include "MyLib/OSWrappers.h"
 
-CAVA3LinkLayer g_AVA3StateMachine;
+CAVA3LinkLayer g_AVA3Link;
 static uint8_t rx_buffer[40];
 
 
@@ -288,19 +288,8 @@ bool CAVA3LinkLayer::on_init_process(void *param) {
 bool CAVA3LinkLayer::run_task() {
     //uint8_t rxBuf[80];
     while(true) {
-        taskDelayMs(1);
+        taskDelayMs(1); 
         processLink();
-        
-        /*
-        int numRXBytes =  pLink->available();
-        if (numRXBytes) {
-            numRXBytes = pLink->readBytes(rxBuf, 80);
-            // send echo to console
-            for (int i = 0; i < numRXBytes; i++) {
-                my_printf("0x%X ", rxBuf[i]);
-            }
-            my_printf("\r\n");
-        }*/
     }
     return true;
 }
