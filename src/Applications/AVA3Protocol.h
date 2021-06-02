@@ -27,3 +27,8 @@ enum class AVA3Answers {
     Ans_set_params          = 0xfa,
     Ans_get_as_param        = 0xfb,
 };
+
+constexpr int g_length_init_param = 9;
+constexpr int g_length_set_params = 4;
+
+

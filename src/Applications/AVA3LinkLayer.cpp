@@ -1,4 +1,5 @@
 #include "AVA3LinkLayer.h"
+#include "ExperimentParam.h"
 #include "Arduino.h"
 #include "console.h"
 #include "MyLib/OSWrappers.h"
@@ -10,11 +11,6 @@ static uint8_t rx_buffer[40];
 //constants
 const uint16_t IP_EXP_ON = 1;
 
-//rx parameters
-const int g_length_init_param = 9;
-const int g_length_set_param = 4;
-
-uint8_t g_MemoryBuf[32767];
 
 const char* GetNameCommand(uint8_t code) {
     static const char *pCmdNames[] = {"CMD_CALC_DATA_PKT_COUNT", "CMD_START_EXP", "CMD_QUERY_STATE",
@@ -58,15 +54,7 @@ const char* GetAnswerNames(uint8_t code) {
 
 bool CAVA3LinkLayer::init() {
     pLink = &Serial; 
-    //
-    // Add here some init code for AVA state machine
-    //
-    // debug code blow - clear it
-    
-    /*for (int i = 0; i < sizeof(g_MemoryBuf); i++) {
-        g_MemoryBuf[i] = 0xaa;
-
-    }*/
+    m_pExpParam = getExpParamInstance(); 
     return true;
 }
 void CAVA3LinkLayer::processLink() {
@@ -91,8 +79,7 @@ void CAVA3LinkLayer::processWaitingCmdState() {
 
         switch (rxCmd) {
         case AVA3Commands::Cmd_terminate_exp: 
-            terminateExp();
-
+            m_pExpParam->terminateExp();
             answerAvaliable = true;
             answer_code = (uint8_t)AVA3Answers::Ans_terminate_exp; 
 
@@ -110,7 +97,7 @@ void CAVA3LinkLayer::processWaitingCmdState() {
         case AVA3Commands::Cmd_start_exp:
             // command hasn't implemented yet!!!
             //ps = RAM_BASE_PTR
-            m_bExperimentOn = true;
+           // m_bExperimentOn = true;
             //ExpSetupOffset = RAM_BASE
             //RAMPtr = ncount_w = nw = 0;
             
@@ -151,7 +138,7 @@ void CAVA3LinkLayer::processWaitingCmdState() {
         case AVA3Commands::Cmd_init:
         case AVA3Commands::Cmd_set_params:
         case AVA3Commands::Cmd_get_as_param:
-            if (!m_bExperimentOn) {
+            if (m_pExpParam->isExperimentOff()) {
                 m_bWaitingCmd = false;
                 m_curCmd = rxCmd;
             }
@@ -193,21 +180,29 @@ void CAVA3LinkLayer::parseInitParam() {
     if (isDebugMode()) {
         outputCmdParamDbgFunc(g_length_init_param);
     }
-    //TODO logic parse init command
 
+    m_pExpParam->SetInitParam(rx_buffer, g_length_init_param);
+}
+
+void CAVA3LinkLayer::parseGetAsParam() {
+    //
+    //sample_i, nw - not used in original code. So this func empty
+    //
 }
 
 void CAVA3LinkLayer::parseSetParam() {
     if (isDebugMode()) {
-        outputCmdParamDbgFunc(g_length_set_param);
+        outputCmdParamDbgFunc(g_length_set_params);
     }
+
+    m_pExpParam->SetParams(rx_buffer, g_length_set_params);
 }
 
 void CAVA3LinkLayer::processRxCmdParamState() {
     int rxBytes = 0;
     int wait_length_rx = 0;
     switch (m_curCmd) {
-        case AVA3Commands::Cmd_init:
+        case AVA3Commands::Cmd_init:                    //implement, need to test!
             wait_length_rx = g_length_init_param;
             rxBytes = pLink->readBytes(rx_buffer, wait_length_rx);
             if (rxBytes == wait_length_rx) {
@@ -218,22 +213,25 @@ void CAVA3LinkLayer::processRxCmdParamState() {
                 errRxCmdParameters(wait_length_rx, rxBytes);
             }
         break;
-        case AVA3Commands::Cmd_get_as_param:
+        case AVA3Commands::Cmd_get_as_param:    //implement, need to test!
+
             wait_length_rx = 4;
             rxBytes = pLink->readBytes(rx_buffer, wait_length_rx);
             
             if (rxBytes == wait_length_rx) {
                 parseGetAsParam();
-                m_bExperimentOn = m_bWaitingCmd = true;
+                m_bWaitingCmd = true;
+                m_pExpParam->SetExperimentOn(true);
+                
                 //sample_ok = false;
                 pLink->write((uint8_t)AVA3Answers::Ans_get_as_param); 
             }  else {
                 errRxCmdParameters(wait_length_rx, rxBytes);
             }
         break;
-        case AVA3Commands::Cmd_set_params:
-            //ps = RAM_BASE_PTR;
-            wait_length_rx = g_length_set_param; 
+        case AVA3Commands::Cmd_set_params:       //implement, need to test!
+
+            wait_length_rx = g_length_set_params; 
             rxBytes = pLink->readBytes(rx_buffer, wait_length_rx);
             
             if (rxBytes == wait_length_rx) {                    
@@ -244,14 +242,15 @@ void CAVA3LinkLayer::processRxCmdParamState() {
                 errRxCmdParameters(wait_length_rx, rxBytes);
             }
         break;
-        case AVA3Commands::Cmd_get_info:
+        case AVA3Commands::Cmd_get_info:    //implement, need to test!
+
             wait_length_rx = 2; 
             rxBytes = pLink->readBytes(rx_buffer, wait_length_rx);
             if (rxBytes == wait_length_rx) {
                 parseGetInfo();
                 uint8_t txVal = 0;
                 if (m_GetInfoParam == IP_EXP_ON) {
-                    txVal = m_bExperimentOn ? 1 : 0;
+                   txVal = m_pExpParam->isExperimentOn() ? 1 : 0;
                 }
                 pLink->write(txVal);
                 m_bWaitingCmd = true;
@@ -259,7 +258,7 @@ void CAVA3LinkLayer::processRxCmdParamState() {
                 errRxCmdParameters(wait_length_rx, rxBytes);
             }
         break;
-        case AVA3Commands::Cmd_set_data_pkt_idx:
+        case AVA3Commands::Cmd_set_data_pkt_idx:  // not implemented yet
             wait_length_rx = 2;
             rxBytes = pLink->readBytes(rx_buffer, wait_length_rx);
             if (rxBytes == wait_length_rx) {
