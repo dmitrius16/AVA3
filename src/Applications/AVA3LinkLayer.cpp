@@ -97,10 +97,16 @@ void CAVA3LinkLayer::processWaitingCmdState() {
         case AVA3Commands::Cmd_start_exp:
             // command hasn't implemented yet!!!
             //ps = RAM_BASE_PTR
-           // m_bExperimentOn = true;
+            
+            //need method for set parameters simultaneously
+            m_pExpParam->SetExperimentOn(true); // m_bExperimentOn = true;
+            m_pExpParam->set_phase_cycles(0);
+            
+
             //ExpSetupOffset = RAM_BASE
             //RAMPtr = ncount_w = nw = 0;
-            
+
+
             answerAvaliable = true;
             answer_code = (uint8_t)AVA3Answers::Ans_start_exp;
 

@@ -25,7 +25,9 @@ bool CAVA3StateMachine::run_task() {
         if (isExperimentOn()) {
             setCyclePhase(false);    
             
-            for (uint8_t n1_cnt = 0; n1_cnt < m_pExpParam->get_n1(); n1_cnt++) {  //get_n1 - need to implement
+            m_pExpParam->set_n1_cnt(0);
+            //for (n1_cnt = 0; n1_cnt < m_pExpParam->get_n1(); n1_cnt++) {  //get_n1 - need to implement
+            for(;m_pExpParam->get_n1_cnt() < m_pExpParam->get_n1(); m_pExpParam->incr_n1_cnt()) {
                 make_pulse();
                 if (isExperimentOff()) {
                     break;
@@ -46,7 +48,10 @@ bool CAVA3StateMachine::run_task() {
             }
 //------------------------------------------------------------
             setCyclePhase(false);
-            for (uint8_t n3_cnt = 0; n3_cnt < m_pExpParam->get_n3(); n3_cnt++) {
+
+            m_pExpParam->set_n3_cnt(0);
+            //for (uint8_t n3_cnt = 0; n3_cnt < m_pExpParam->get_n3(); n3_cnt++) {
+            for(;m_pExpParam->get_n3_cnt() < m_pExpParam->get_n3(); m_pExpParam->incr_n3_cnt()) {
                 make_pulse();
                 if (isExperimentOff()) {
                     break;
