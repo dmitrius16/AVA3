@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "modulInfo.h"
 #include "Drivers/subsytemDAC_ADC.h"
+#include "driver/mcpwm.h"
 #include "Arduino.h"
 #include "esp_ipc.h"
 
@@ -9,11 +10,14 @@ CModulInfo ava;
 
 constexpr const char CModulInfo::device_name[] = "AVA3";
 
-const int8_t pinWORK = 4;  //26
-const int8_t pin10uA =  22;    //36;
-const int8_t pin100mA = 23; //37;
-const int8_t pinCELL = 21;//33;
+const int8_t pinWORK = 4;
+const int8_t pin10uA =  22;
+const int8_t pin100mA = 23;
+const int8_t pinCELL = 21;
 
+const int8_t pinMOT_PWM   = 25;     // PWM signal - output
+const int8_t pinMOT_TACHO = 34;     // input pin for read analog value by ADC
+const int8_t pinMOT_GATE  = 26;     // TACHO switch - output
 typedef struct {
     AVA_RELAY relay;
     int8_t pinNum;
@@ -61,9 +65,30 @@ bool CModulInfo::init() {
     // here place init code for ava3
     add_console_command("sys", this);
     initRelaysPins();
+    initMotorDriver();
     return true;
 }
 
+bool CModulInfo::initMotorDriver() {
+    // init gpio pins 
+    mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, pinMOT_PWM);
+    mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0B, pinMOT_GATE);
+
+    //config pwm parameters 
+    mcpwm_config_t pwm_config;
+    pwm_config.frequency = 200; //200Hz
+    pwm_config.cmpr_a = 50; // dirty cycle PWMA = 50 %
+    pwm_config.cmpr_b = 50; // dirty cycle PWMB = 40 %
+    pwm_config.counter_mode = MCPWM_UP_COUNTER;
+    pwm_config.duty_mode = MCPWM_DUTY_MODE_0;
+    mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwm_config);
+    mcpwm_deadtime_enable(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_ACTIVE_HIGH_MODE, 5000, 5000);
+    mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    
+    
+    return true;
+
+}
 
 void CModulInfo::relaySwitch(AVA_RELAY relay, int8_t val) {
     RELAY_TO_PIN_RELATION relayToPin = getRelayToPin(relay);
@@ -107,6 +132,10 @@ void CModulInfo::Command(int argc, char* argv[]) {
         //my_printf("receive system command\r\n");
         if (!strcmp("?", argv[1])) {
             my_printf("adc_start - start 100 adc asking\r\n");
+            my_printf("Motor commands:\r\n");
+            my_printf("\tmotor_gate {\"\", on, off}\r\n");
+            //my_printf("")
+            //----------------------- Relay commands block
             my_printf("Relay commands:\r\n");
             my_printf("\trelay_name = {work, cell, curr10uA, curr100mA} {\"\", on, off}\r\n");
             my_printf("\tif command after relay name is empty toggle state is occured\r\n");

@@ -21,6 +21,7 @@ private:
     bool initSpiSubsystem();
     void relaySwitch(AVA_RELAY relay, int8_t val);
     int8_t readRelayPin(AVA_RELAY relay);
+    bool initMotorDriver();
 public:
     bool init();
     void relayTurnOn(AVA_RELAY relay);
