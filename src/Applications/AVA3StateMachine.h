@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "runnable_task.h"
+#include "ExperimentParam.h"
 
 class CExpParam;
 class CAVA3StateMachine : public RunnableTask {
@@ -17,7 +18,8 @@ private:
     }
     
     bool isInfiniteCycles();
-    uint16_t getCycles();   //check return type
+    
+    uint16_t get_cycles();   //check return type
     // experiment parameter object
 
     //experiment action functions

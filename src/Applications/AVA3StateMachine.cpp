@@ -39,12 +39,17 @@ bool CAVA3StateMachine::run_task() {
                     make_cycle_phase();
                 }
             } else {
-                for(uint16_t cycle_cnt = 0; cycle_cnt < getCycles(); cycle_cnt++) {
+                
+                // think about wrappers on cycles wariable in AVA3StateMachine class
+                m_pExpParam->set_cycle_num(0);
+                
+                for(; m_pExpParam->get_cycle_num() < m_pExpParam->get_amount_cycles(); m_pExpParam->incr_cycle_cnt()) {
                     make_cycle_phase();
                     if (isExperimentOff()) {
                         break;
                     }
                 }
+
             }
 //------------------------------------------------------------
             setCyclePhase(false);
@@ -67,11 +72,15 @@ bool CAVA3StateMachine::run_task() {
 }
 
 inline bool CAVA3StateMachine::isInfiniteCycles() {
+    
     return m_pExpParam->isInfiniteCycles();
+
 }
 
-inline uint16_t CAVA3StateMachine::getCycles() {
-    return m_pExpParam->getCycles();
+inline uint16_t CAVA3StateMachine::get_cycles() {
+    
+    return m_pExpParam->get_amount_cycles();
+
 }
 
 inline bool CAVA3StateMachine::isExperimentOn() {

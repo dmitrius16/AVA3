@@ -1,11 +1,16 @@
 #include "AVA3LinkLayer.h"
-#include "ExperimentParam.h"
 #include "Arduino.h"
 #include "console.h"
 #include "MyLib/OSWrappers.h"
 
 CAVA3LinkLayer g_AVA3Link;
 static uint8_t rx_buffer[40];
+static uint8_t tx_buffer[40];
+
+//now it's fivtive variables
+uint8_t g_voltageHiB, g_voltageLoB;
+uint8_t g_currentHiB, g_currentLoB;
+//now it's fictive variables
 
 
 //constants
@@ -53,21 +58,71 @@ const char* GetAnswerNames(uint8_t code) {
 
 
 bool CAVA3LinkLayer::init() {
-    pLink = &Serial; 
+    m_pLink = &Serial; 
     m_pExpParam = getExpParamInstance(); 
     return true;
 }
+
+void CAVA3LinkLayer::do_send_pkts() {
+    if (m_bSendingDataPkt || m_bSendingResponse) {
+        if (m_SendByteIdx == 0) { //prepare and send first block data (name in enum SEND_STATUS)
+            tx_buffer[0] = makeStatusByte();            
+            tx_buffer[1] = m_pExpParam->get_n1_cnt();
+            tx_buffer[2] = m_pExpParam->get_n1_cnt();
+            tx_buffer[3] = m_pExpParam->get_n3_cnt();
+            uint16_t amountCycles = m_pExpParam->get_amount_cycles();
+            tx_buffer[4] = (uint8_t)(amountCycles >> 8);
+            tx_buffer[5] = (uint8_t)(amountCycles);
+            m_pLink->write(tx_buffer, 6);
+            m_SendByteIdx = 7;           // it's similar to emum data type
+        } else if (m_SendByteIdx == 7) {    //(SEND_DATA)
+            if (m_bSendingResponse) {
+                
+                tx_buffer[0] = g_voltageHiB;    //fictive data
+                tx_buffer[1] = g_voltageLoB;
+                tx_buffer[2] = g_currentHiB;
+                tx_buffer[3] = g_currentLoB;
+                m_pLink->write(tx_buffer, 4);
+
+                m_bSendingResponse = false;
+            } else { // here we read memory and send data
+
+
+
+            }
+        }
+    }
+}
+
+uint8_t CAVA3LinkLayer::makeStatusByte() {
+    uint8_t res = 0;
+    uint8_t temp = m_pExpParam->isCyclicPhase() ? 1 : 0;
+    res |= temp << 6;
+    temp = m_bSendingResponse ? 1 : 0;
+    res |= temp  << 5;
+    temp = m_bSendingDataPkt ? 1 : 0;
+    res |= temp << 4;
+    temp = m_bWaitingCmd ? 1 : 0;
+    res |= res << 1;
+    temp = m_pExpParam->isExperimentOn() ? 1 : 0;
+    res |= temp;
+    return res;
+}
+
 void CAVA3LinkLayer::processLink() {
     if (isWaitingCmd()) {    
         processWaitingCmdState();
     } else {
         processRxCmdParamState();
     }
+
+    //do send packets
+
 }
 
 void CAVA3LinkLayer::processWaitingCmdState() {
-    if (pLink->available()) {
-        uint8_t read_byte = pLink->read();
+    if (m_pLink->available()) {
+        uint8_t read_byte = m_pLink->read();
         AVA3Commands rxCmd = (AVA3Commands)read_byte;
         bool answerAvaliable = false;
         uint8_t answer_code = 0;
@@ -113,12 +168,9 @@ void CAVA3LinkLayer::processWaitingCmdState() {
 
 
             break;
-        case AVA3Commands::Cmd_query_state: //implement first in queue!!!
-            // command hasn't implemented yet
-            // SendByteIdx = RespSendByteIdx = 0;
-            m_bSendingResponse = true;
-            
-            
+        case AVA3Commands::Cmd_query_state: // ready to use
+            m_SendByteIdx = m_RespSendByteIdx = 0;
+            m_bSendingResponse = true; 
             answerAvaliable = true;
             answer_code = (uint8_t)AVA3Answers::Ans_query_state;
 
@@ -131,10 +183,13 @@ void CAVA3LinkLayer::processWaitingCmdState() {
             
             break;
         case AVA3Commands::Cmd_get_data_pkt:
-            m_bSendingDataPkt = true;
+            //m_bSendingDataPkt = true;
             m_DataPktSendBytes = 0;
             //operation hasn't implemented yet
             //DataPtr -= DATA_PACKET_SIZE
+            break;
+        case AVA3Commands::Cmd_rep_get_data_pkt:
+            // hasn't implemented yet
             break;
         case AVA3Commands::Cmd_set_data_pkt_idx:
         case AVA3Commands::Cmd_get_info:
@@ -156,7 +211,7 @@ void CAVA3LinkLayer::processWaitingCmdState() {
             break;
         } 
         if (answerAvaliable) {
-            pLink->write(answer_code);
+            m_pLink->write(answer_code);
             if (isDebugMode()) {
                 my_printf("Answer code: %d\r\n", answer_code);
             }
@@ -210,11 +265,12 @@ void CAVA3LinkLayer::processRxCmdParamState() {
     switch (m_curCmd) {
         case AVA3Commands::Cmd_init:                    //implement, need to test!
             wait_length_rx = g_length_init_param;
-            rxBytes = pLink->readBytes(rx_buffer, wait_length_rx);
+            rxBytes = m_pLink->readBytes(rx_buffer, wait_length_rx);
+            
             if (rxBytes == wait_length_rx) {
                 parseInitParam(); 
                 m_bWaitingCmd = true;
-                pLink->write((uint8_t)AVA3Answers::Ans_init);
+                m_pLink->write((uint8_t)AVA3Answers::Ans_init);
             }  else {                    
                 errRxCmdParameters(wait_length_rx, rxBytes);
             }
@@ -222,7 +278,7 @@ void CAVA3LinkLayer::processRxCmdParamState() {
         case AVA3Commands::Cmd_get_as_param:    //implement, need to test!
 
             wait_length_rx = 4;
-            rxBytes = pLink->readBytes(rx_buffer, wait_length_rx);
+            rxBytes = m_pLink->readBytes(rx_buffer, wait_length_rx);
             
             if (rxBytes == wait_length_rx) {
                 parseGetAsParam();
@@ -230,7 +286,7 @@ void CAVA3LinkLayer::processRxCmdParamState() {
                 m_pExpParam->SetExperimentOn(true);
                 
                 //sample_ok = false;
-                pLink->write((uint8_t)AVA3Answers::Ans_get_as_param); 
+                m_pLink->write((uint8_t)AVA3Answers::Ans_get_as_param); 
             }  else {
                 errRxCmdParameters(wait_length_rx, rxBytes);
             }
@@ -238,12 +294,12 @@ void CAVA3LinkLayer::processRxCmdParamState() {
         case AVA3Commands::Cmd_set_params:       //implement, need to test!
 
             wait_length_rx = g_length_set_params; 
-            rxBytes = pLink->readBytes(rx_buffer, wait_length_rx);
+            rxBytes = m_pLink->readBytes(rx_buffer, wait_length_rx);
             
             if (rxBytes == wait_length_rx) {                    
                parseSetParam();
                m_bWaitingCmd = true;
-               pLink->write((uint8_t)AVA3Answers::Ans_set_params); 
+               m_pLink->write((uint8_t)AVA3Answers::Ans_set_params); 
             } else {
                 errRxCmdParameters(wait_length_rx, rxBytes);
             }
@@ -251,14 +307,14 @@ void CAVA3LinkLayer::processRxCmdParamState() {
         case AVA3Commands::Cmd_get_info:    //implement, need to test!
 
             wait_length_rx = 2; 
-            rxBytes = pLink->readBytes(rx_buffer, wait_length_rx);
+            rxBytes = m_pLink->readBytes(rx_buffer, wait_length_rx);
             if (rxBytes == wait_length_rx) {
                 parseGetInfo();
                 uint8_t txVal = 0;
                 if (m_GetInfoParam == IP_EXP_ON) {
                    txVal = m_pExpParam->isExperimentOn() ? 1 : 0;
                 }
-                pLink->write(txVal);
+                m_pLink->write(txVal);
                 m_bWaitingCmd = true;
             } else {
                 errRxCmdParameters(wait_length_rx, rxBytes);
@@ -266,7 +322,7 @@ void CAVA3LinkLayer::processRxCmdParamState() {
         break;
         case AVA3Commands::Cmd_set_data_pkt_idx:  // not implemented yet
             wait_length_rx = 2;
-            rxBytes = pLink->readBytes(rx_buffer, wait_length_rx);
+            rxBytes = m_pLink->readBytes(rx_buffer, wait_length_rx);
             if (rxBytes == wait_length_rx) {
                 parseSetDataPktIdx();
                 //DataSentBytes = DATA_PACKET_SIZE * PktIndex;
@@ -274,7 +330,7 @@ void CAVA3LinkLayer::processRxCmdParamState() {
                 //                RespSendByteIdx = 0;
                 //                SET_DATA_SENDING_STATE;
                 m_bWaitingCmd = true;
-                pLink->write((uint8_t)AVA3Answers::Ans_set_data_pkt_idx);
+                m_pLink->write((uint8_t)AVA3Answers::Ans_set_data_pkt_idx);
             } else {
                 errRxCmdParameters(wait_length_rx, rxBytes);
             }

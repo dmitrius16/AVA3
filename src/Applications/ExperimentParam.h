@@ -2,9 +2,6 @@
 #include <stdint.h>
 #include "AVA3Protocol.h"
 
-class CExpParam;
-CExpParam* getExpParamInstance(void);
-
 constexpr uint16_t INFINITE_CYCLES = 0xFFFF;
 
 class CExpParam {
@@ -12,26 +9,31 @@ class CExpParam {
 
     bool m_bExperimentOn;
     bool m_bSendingDataPkt;
-    bool m_bSendingResponse;
+    bool m_bSendingResponse;    //now used variable declared in AVA3LinkLayer
     bool m_bCyclePhase;
 
+    uint8_t *ps;
     uint8_t n1;
     uint8_t n2;
     uint8_t n3;
     uint8_t n1_cnt;
     uint8_t n2_cnt;
     uint8_t n3_cnt;
-    uint16_t m_nCount;
+    
+    uint16_t m_nCycleCnt;  //original name ncount
+    uint16_t m_nAmountCycles; //original name ncount_w
+    
     uint16_t m_CycleRamBase;
     uint16_t m_DataSizeBytes;
     uint32_t m_cntExpTermination;
+
 private:
     CExpParam() : m_bExperimentOn(false), m_bSendingResponse(false), m_bCyclePhase(false),
-    n1(0), n2(0), n3(0), n1_cnt(0), n2_cnt(0), n3_cnt(0), m_nCount(0), m_CycleRamBase(0), m_DataSizeBytes(0) ,m_cntExpTermination(0) {}
+    n1(0), n2(0), n3(0), n1_cnt(0), n2_cnt(0), n3_cnt(0), m_nCycleCnt(0), m_nAmountCycles(0),m_CycleRamBase(0), m_DataSizeBytes(0), m_cntExpTermination(0) {}
 public:
     void terminateExp() {
         n1 = n2 = n3 = 0;
-        m_nCount = 0;
+        ;
         m_bSendingDataPkt = false;
         m_bExperimentOn = false;
         m_bSendingResponse = false;
@@ -66,15 +68,36 @@ public:
     void incr_n1_cnt() {n1_cnt += 1;}
     void incr_n2_cnt() {n2_cnt += 1;}
     void incr_n3_cnt() {n3_cnt += 1;}
-///
-    
 
-    uint16_t getCycles() {return m_nCount;} // or may be rename m_nCount
-    bool isInfiniteCycles() {return m_nCount == INFINITE_CYCLES;}
+// cycles variable    
+    void set_amount_cycles(uint16_t val) {
+       m_nAmountCycles = val;
+    }
+    uint16_t get_amount_cycles() {
+        return m_nAmountCycles;
+    }
+
+    void set_cycle_num(uint16_t val) {
+        m_nCycleCnt = val;
+    }
+
+    uint16_t get_cycle_num() {
+        return m_nCycleCnt;
+    }
+
+    void incr_cycle_cnt() {m_nCycleCnt++;}
+
+    bool isInfiniteCycles() {return m_nAmountCycles == INFINITE_CYCLES;}
+//cycles variables    
+    
     
     bool isExperimentOn() {
         //use sync object
         return m_bExperimentOn == true;
+    }
+
+    bool isCyclicPhase() {
+        return m_bCyclePhase;
     }
 
     bool isExperimentOff() {
@@ -93,8 +116,8 @@ public:
             n2 = bufParam[1];
             n3 = bufParam[2];
 
-            m_nCount = (uint16_t)bufParam[3] << 8;
-            m_nCount += bufParam[4];
+            m_nAmountCycles = (uint16_t)bufParam[3] << 8;
+            m_nAmountCycles += bufParam[4];
 
             m_CycleRamBase = (uint16_t)bufParam[5] << 8;
             m_CycleRamBase += bufParam[6];
@@ -106,3 +129,4 @@ public:
     }
     void SetParams(uint8_t* bufParam, int length);
 };
+CExpParam* getExpParamInstance(void); 

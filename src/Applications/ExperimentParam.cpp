@@ -9,6 +9,7 @@ const int RAM_SHIFT = 31000;
 
 uint8_t* g_RamBasePtr = &g_ParamMemory[RAM_BASE];
 
+
 CExpParam* getExpParamInstance(void) {
     static CExpParam* s_pExpPar = nullptr;
     if (s_pExpPar == nullptr) {

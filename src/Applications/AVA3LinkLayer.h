@@ -2,34 +2,28 @@
 #include <stdint.h>
 #include "runnable_task.h"
 #include "AVA3Protocol.h"
+#include "ExperimentParam.h"
 class Stream;
 class CExpParam;
+
 class CAVA3LinkLayer : public RunnableTask{
 private:
     bool m_bWaitingCmd;
-    bool m_bSendingDataPkt;
-//    bool m_bExperimentOn;
     bool m_bSendingResponse;    // candidate to move in ExperimentParam
-//    bool m_bCyclesPhase;        
+    bool m_bSendingDataPkt;     // it's experiment param
+    
     bool m_bDebugMode;
-//experiment parameters:  ### may be declare this variables in separate class
-   /*
-    uint8_t n1; 
-    uint8_t n2;
-    uint8_t n3;
-    uint8_t n_count;
-    uint32_t m_cntExpTermination;
-    */
-// end experiment parameters
 
+    uint8_t m_SendByteIdx;
+    uint8_t m_RespSendByteIdx;
 // counters.... and other staff
     uint8_t m_DataPktSendBytes;
     uint16_t m_GetInfoParam;
 // 
     AVA3Commands m_curCmd;
     
-    Stream *pLink;
-    CExpParam *m_pExpParam;
+    Stream *m_pLink;
+    CExpParam *m_pExpParam; // we use local copy in LinkLayer! if state change we send it to AVA3StateMachine 
 private:
     /*
     void terminateExp() {
@@ -49,9 +43,12 @@ private:
     void parseSetDataPktIdx() {}
     bool isDebugMode() {return m_bDebugMode;}
     void errRxCmdParameters(int waitLen, int RxLen);
+
+    void do_send_pkts();
+    uint8_t makeStatusByte();
 public:
-    CAVA3LinkLayer(): m_bWaitingCmd(true), m_bSendingDataPkt(false), m_bSendingResponse(false),
-    m_bDebugMode(true), m_DataPktSendBytes(0), m_GetInfoParam(0),
+    CAVA3LinkLayer(): m_bWaitingCmd(true), m_bSendingResponse(false), m_bSendingDataPkt(false), 
+    m_bDebugMode(true), m_SendByteIdx(0), m_RespSendByteIdx(0), m_DataPktSendBytes(0), m_GetInfoParam(0),
     m_curCmd(AVA3Commands::Cmd_undefined_cmd) {
 
     }
