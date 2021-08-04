@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "AVA3Protocol.h"
 
+constexpr int RAM_BASE = 200;   //
 constexpr uint16_t INFINITE_CYCLES = 0xFFFF;
 
 class CExpParam {
@@ -22,6 +23,8 @@ class CExpParam {
     
     uint16_t m_nCycleCnt;  //original name ncount
     uint16_t m_nAmountCycles; //original name ncount_w
+    uint16_t m_ExpSetupOffset;
+    uint16_t m_RAMPtr;
     
     uint16_t m_CycleRamBase;
     uint16_t m_DataSizeBytes;
@@ -29,8 +32,12 @@ class CExpParam {
 
 private:
     CExpParam() : m_bExperimentOn(false), m_bSendingResponse(false), m_bCyclePhase(false),
-    n1(0), n2(0), n3(0), n1_cnt(0), n2_cnt(0), n3_cnt(0), m_nCycleCnt(0), m_nAmountCycles(0),m_CycleRamBase(0), m_DataSizeBytes(0), m_cntExpTermination(0) {}
+    n1(0), n2(0), n3(0), n1_cnt(0), n2_cnt(0), n3_cnt(0), 
+    m_nCycleCnt(0), m_nAmountCycles(0),m_ExpSetupOffset(0), m_RAMPtr(0), m_CycleRamBase(0), 
+    m_DataSizeBytes(0), m_cntExpTermination(0) {}
 public:
+    //void set
+
     void terminateExp() {
         n1 = n2 = n3 = 0;
         ;
@@ -61,6 +68,11 @@ public:
         n3_cnt = val;
     }
 
+    void zero_pulse_counters() {
+        n1_cnt = n2_cnt = n3_cnt = 0;
+    }
+
+
     uint8_t get_n1_cnt() {return n1_cnt;}
     uint8_t get_n2_cnt() {return n2_cnt;}
     uint8_t get_n3_cnt() {return n3_cnt;}
@@ -90,6 +102,22 @@ public:
     bool isInfiniteCycles() {return m_nAmountCycles == INFINITE_CYCLES;}
 //cycles variables    
     
+    void set_ExpSetupOffset(uint16_t val) {
+        m_ExpSetupOffset = val;
+    }
+
+    uint16_t get_ExpSetupOffset() {
+        return m_ExpSetupOffset;
+    } 
+
+    void set_RAMPtr(uint16_t val) {
+        m_RAMPtr = val;
+    }
+
+    uint16_t get_RAMPtr() {
+        return m_RAMPtr;
+    }
+
     
     bool isExperimentOn() {
         //use sync object

@@ -157,11 +157,11 @@ void CAVA3LinkLayer::processWaitingCmdState() {
             m_pExpParam->SetExperimentOn(true); // m_bExperimentOn = true;
             m_pExpParam->set_phase_cycles(0);
             
-
-            //ExpSetupOffset = RAM_BASE
-            //RAMPtr = ncount_w = nw = 0;
-
-
+            m_pExpParam->set_ExpSetupOffset(RAM_BASE);
+            m_pExpParam->set_RAMPtr(0);
+            m_pExpParam->set_cycle_num(0);
+            m_pExpParam->zero_pulse_counters();
+            
             answerAvaliable = true;
             answer_code = (uint8_t)AVA3Answers::Ans_start_exp;
 
