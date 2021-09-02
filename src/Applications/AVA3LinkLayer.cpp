@@ -15,7 +15,9 @@ uint8_t g_currentHiB, g_currentLoB;
 
 //constants
 const uint16_t IP_EXP_ON = 1;
-
+const uint16_t EXP_MEAS_SIZE = 4;
+const uint16_t START_DATA_PTR = EXP_MEAS_SIZE;
+const uint16_t DATA_PACKET_SIZE = 60;
 
 const char* GetNameCommand(uint8_t code) {
     static const char *pCmdNames[] = {"CMD_CALC_DATA_PKT_COUNT", "CMD_START_EXP", "CMD_QUERY_STATE",
@@ -61,6 +63,10 @@ bool CAVA3LinkLayer::init() {
     m_pLink = &Serial; 
     m_pExpParam = getExpParamInstance(); 
     return true;
+}
+
+void CAVA3LinkLayer::setDataSendingState() {
+    m_SendByteIdx = 7; // do_send_pkts work in sending data mode
 }
 
 void CAVA3LinkLayer::do_send_pkts() {
@@ -134,39 +140,23 @@ void CAVA3LinkLayer::processWaitingCmdState() {
 
         switch (rxCmd) {
         case AVA3Commands::Cmd_terminate_exp: 
-            m_pExpParam->terminateExp();
+            m_pExpParam->terminateExpCmd();
             answerAvaliable = true;
             answer_code = (uint8_t)AVA3Answers::Ans_terminate_exp; 
 
             break;
         case AVA3Commands::Cmd_calc_data_pkt_count:
-            // 
-            // command hasn't implemented yet!!!
-            // SET_DATA_SENFING_STATE
-            // DataPtr = StartDataPtr
-
+            m_SendByteIdx = m_DataSendBytes = 0;
+            setDataSendingState();
+            m_DataPtr = START_DATA_PTR;
             answerAvaliable = true;
             answer_code = (uint8_t)AVA3Answers::Ans_calc_data_pkt_count;
 
             break;
-        case AVA3Commands::Cmd_start_exp:
-            // command hasn't implemented yet!!!
-            //ps = RAM_BASE_PTR
-            
-            //need method for set parameters simultaneously
-            m_pExpParam->SetExperimentOn(true); // m_bExperimentOn = true;
-            m_pExpParam->set_phase_cycles(0);
-            
-            m_pExpParam->set_ExpSetupOffset(RAM_BASE);
-            m_pExpParam->set_RAMPtr(0);
-            m_pExpParam->set_cycle_num(0);
-            m_pExpParam->zero_pulse_counters();
-            
+        case AVA3Commands::Cmd_start_exp: 
+            m_pExpParam->experimentOnCmd(); 
             answerAvaliable = true;
             answer_code = (uint8_t)AVA3Answers::Ans_start_exp;
-
-
-
             break;
         case AVA3Commands::Cmd_query_state: // ready to use
             m_SendByteIdx = m_RespSendByteIdx = 0;
@@ -178,18 +168,16 @@ void CAVA3LinkLayer::processWaitingCmdState() {
         case AVA3Commands::Cmd_query_status_as:
             //sample_ok - variable in orirginal always set to false
             answerAvaliable = true;
-            answer_code = 0;
-            
-            
+            answer_code = 0; 
             break;
-        case AVA3Commands::Cmd_get_data_pkt:
-            //m_bSendingDataPkt = true;
+        case AVA3Commands::Cmd_get_data_pkt:    //+ 
+            m_bSendingDataPkt = true;
             m_DataPktSendBytes = 0;
-            //operation hasn't implemented yet
-            //DataPtr -= DATA_PACKET_SIZE
             break;
-        case AVA3Commands::Cmd_rep_get_data_pkt:
-            // hasn't implemented yet
+        case AVA3Commands::Cmd_rep_get_data_pkt: //+
+            m_bSendingDataPkt = true;
+            m_DataPktSendBytes = 0;
+            m_DataPtr -= DATA_PACKET_SIZE;
             break;
         case AVA3Commands::Cmd_set_data_pkt_idx:
         case AVA3Commands::Cmd_get_info:
@@ -259,6 +247,27 @@ void CAVA3LinkLayer::parseSetParam() {
     m_pExpParam->SetParams(rx_buffer, g_length_set_params);
 }
 
+void CAVA3LinkLayer::parseSetDataPktIdx() {
+    if (isDebugMode()) {
+        outputCmdParamDbgFunc(g_length_set_pktIDX_param);
+    }
+    uint16_t pktInd = rx_buffer[0] << 8;
+    pktInd |= rx_buffer[1];
+    m_DataSendBytes = DATA_PACKET_SIZE * pktInd;
+    m_DataPtr = START_DATA_PTR + m_DataSendBytes;
+    m_RespSendByteIdx = 0;
+    setDataSendingState();
+}
+
+void CAVA3LinkLayer::parseGetInfo() {
+    if (isDebugMode()) {
+        outputCmdParamDbgFunc(g_length_get_info_param);
+    }
+
+    m_GetInfoParam = rx_buffer[0] << 8;
+    m_GetInfoParam |= rx_buffer[1];
+}
+
 void CAVA3LinkLayer::processRxCmdParamState() {
     int rxBytes = 0;
     int wait_length_rx = 0;
@@ -325,10 +334,6 @@ void CAVA3LinkLayer::processRxCmdParamState() {
             rxBytes = m_pLink->readBytes(rx_buffer, wait_length_rx);
             if (rxBytes == wait_length_rx) {
                 parseSetDataPktIdx();
-                //DataSentBytes = DATA_PACKET_SIZE * PktIndex;
-                //                DataPtr = START_DATA_PTR + DataSentBytes;
-                //                RespSendByteIdx = 0;
-                //                SET_DATA_SENDING_STATE;
                 m_bWaitingCmd = true;
                 m_pLink->write((uint8_t)AVA3Answers::Ans_set_data_pkt_idx);
             } else {

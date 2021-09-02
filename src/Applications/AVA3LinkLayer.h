@@ -9,8 +9,8 @@ class CExpParam;
 class CAVA3LinkLayer : public RunnableTask{
 private:
     bool m_bWaitingCmd;
-    bool m_bSendingResponse;    // candidate to move in ExperimentParam
-    bool m_bSendingDataPkt;     // it's experiment param
+    bool m_bSendingResponse;
+    bool m_bSendingDataPkt; 
     
     bool m_bDebugMode;
 
@@ -20,6 +20,10 @@ private:
     uint8_t m_DataPktSendBytes;
     uint16_t m_GetInfoParam;
 // 
+// do_send_packets 
+    uint16_t m_DataSendBytes;
+    uint16_t m_DataPtr;
+//
     AVA3Commands m_curCmd;
     
     Stream *m_pLink;
@@ -39,11 +43,11 @@ private:
     void parseInitParam(); 
     void parseGetAsParam(); 
     void parseSetParam();
-    void parseGetInfo() {}
-    void parseSetDataPktIdx() {}
+    void parseGetInfo();
+    void parseSetDataPktIdx();
     bool isDebugMode() {return m_bDebugMode;}
     void errRxCmdParameters(int waitLen, int RxLen);
-
+    void setDataSendingState();
     void do_send_pkts();
     uint8_t makeStatusByte();
 public:

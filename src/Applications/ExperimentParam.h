@@ -38,14 +38,7 @@ private:
 public:
     //void set
 
-    void terminateExp() {
-        n1 = n2 = n3 = 0;
-        ;
-        m_bSendingDataPkt = false;
-        m_bExperimentOn = false;
-        m_bSendingResponse = false;
-        m_cntExpTermination++;
-    }
+   
 
     uint8_t get_n1() {return n1;}
     uint8_t get_n2() {return n2;}
@@ -67,11 +60,6 @@ public:
     void set_n3_cnt(uint8_t val) {
         n3_cnt = val;
     }
-
-    void zero_pulse_counters() {
-        n1_cnt = n2_cnt = n3_cnt = 0;
-    }
-
 
     uint8_t get_n1_cnt() {return n1_cnt;}
     uint8_t get_n2_cnt() {return n2_cnt;}
@@ -154,6 +142,22 @@ public:
             m_DataSizeBytes += bufParam[8];
 
         }
+    }
+
+    void terminateExpCmd() {
+        n1 = n2 = n3 = 0;
+        m_bSendingDataPkt = false;
+        m_bExperimentOn = false;
+        m_bSendingResponse = false;
+        m_cntExpTermination++;
+    }
+
+    void experimentOnCmd() {   //call from AVA3LinkLayer
+        m_bExperimentOn = true;
+        n1_cnt = n2_cnt = n3_cnt = 0; 
+        m_ExpSetupOffset = RAM_BASE;
+        m_RAMPtr = 0;
+        m_nCycleCnt = 0;
     }
     void SetParams(uint8_t* bufParam, int length);
 };

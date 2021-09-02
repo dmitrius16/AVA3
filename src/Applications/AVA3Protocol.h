@@ -30,5 +30,7 @@ enum class AVA3Answers {
 
 constexpr int g_length_init_param = 9;
 constexpr int g_length_set_params = 4;
+constexpr int g_length_set_pktIDX_param = 2;
+constexpr int g_length_get_info_param = 2;
 
 
