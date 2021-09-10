@@ -76,18 +76,29 @@ bool CModulInfo::initMotorDriver() {
 
     //config pwm parameters 
     mcpwm_config_t pwm_config;
-    pwm_config.frequency = 200; //200Hz
-    pwm_config.cmpr_a = 30; // dirty cycle PWMA = 50 %
-    pwm_config.cmpr_b = 80; // dirty cycle PWMB = 40 %
+    pwm_config.frequency = 200;//200; //200Hz
+    pwm_config.cmpr_a = 70;//70; // dirty cycle PWMA = 50 %
+    pwm_config.cmpr_b = 80;//80; //80 dirty cycle PWMB = 40 %
     pwm_config.counter_mode = MCPWM_UP_COUNTER;
     pwm_config.duty_mode = MCPWM_DUTY_MODE_0;
     mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwm_config);
     mcpwm_deadtime_enable(MCPWM_UNIT_0, MCPWM_TIMER_0,  MCPWM_ACTIVE_LOW_MODE, 5000, 5000);
     mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
-    
-    
+//    mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);   //MCPWM_OPR_MAX - this param not worked 
     return true;
 
+}
+
+void CModulInfo::switchMotor(bool state) {
+    //state - true turn on motor
+    //state - false turn off motor
+    if (state) {
+        mcpwm_set_signal_high(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);
+        mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    } else {
+        mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);
+        mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    }
 }
 
 void CModulInfo::relaySwitch(AVA_RELAY relay, int8_t val) {
@@ -133,7 +144,7 @@ void CModulInfo::Command(int argc, char* argv[]) {
         if (!strcmp("?", argv[1])) {
             my_printf("adc_start - start 100 adc asking\r\n");
             my_printf("Motor commands:\r\n");
-            my_printf("\tmotor_gate {\"\", on, off}\r\n");
+            my_printf("\tmotor{\"\", on, off}\r\n");
             //my_printf("")
             //----------------------- Relay commands block
             my_printf("Relay commands:\r\n");
@@ -149,10 +160,15 @@ void CModulInfo::Command(int argc, char* argv[]) {
             start_adc_asking(nullptr);
 
 
-            //test code 
-            
-            
-            
+            //test code    
+        }  else if(!strcmp("motor", argv[1])) {
+            if(!strcmp("on", argv[2])) {
+                switchMotor(true);
+
+            } else if (!strcmp("off", argv[2])) {
+                switchMotor(false);
+            }
+
             
             /* working code if it's needed uncoment
             CAnalogSubsystem& analogSubsystem = getAnalogSubsystemInstance();

@@ -92,9 +92,15 @@ void CAVA3LinkLayer::do_send_pkts() {
 
                 m_bSendingResponse = false;
             } else { // here we read memory and send data
+                m_DataSendBytes++;
+                m_DataPktSendBytes++;
 
+                //reading from memory procedure
+                //here DataPtr++
 
-
+                if (m_DataSendBytes >= m_DataSizeBytes || m_DataPktSendBytes >= DATA_PACKET_SIZE) {
+                    m_bSendingDataPkt = true;
+                }
             }
         }
     }
@@ -231,6 +237,10 @@ void CAVA3LinkLayer::parseInitParam() {
     }
 
     m_pExpParam->SetInitParam(rx_buffer, g_length_init_param);
+
+    m_DataSizeBytes = (uint16_t)rx_buffer[7] << 8;
+    m_DataSizeBytes += rx_buffer[8];
+
 }
 
 void CAVA3LinkLayer::parseGetAsParam() {
@@ -329,7 +339,7 @@ void CAVA3LinkLayer::processRxCmdParamState() {
                 errRxCmdParameters(wait_length_rx, rxBytes);
             }
         break;
-        case AVA3Commands::Cmd_set_data_pkt_idx:  // not implemented yet
+        case AVA3Commands::Cmd_set_data_pkt_idx: 
             wait_length_rx = 2;
             rxBytes = m_pLink->readBytes(rx_buffer, wait_length_rx);
             if (rxBytes == wait_length_rx) {

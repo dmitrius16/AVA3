@@ -9,7 +9,7 @@ class CExpParam {
     friend CExpParam* getExpParamInstance(void); 
 
     bool m_bExperimentOn;
-    bool m_bSendingDataPkt;
+    //bool m_bSendingDataPkt;   // moved to Link Layer
     bool m_bSendingResponse;    //now used variable declared in AVA3LinkLayer
     bool m_bCyclePhase;
 
@@ -27,14 +27,14 @@ class CExpParam {
     uint16_t m_RAMPtr;
     
     uint16_t m_CycleRamBase;
-    uint16_t m_DataSizeBytes;
+    //uint16_t m_DataSizeBytes; moved to Link Layer
     uint32_t m_cntExpTermination;
 
 private:
     CExpParam() : m_bExperimentOn(false), m_bSendingResponse(false), m_bCyclePhase(false),
     n1(0), n2(0), n3(0), n1_cnt(0), n2_cnt(0), n3_cnt(0), 
     m_nCycleCnt(0), m_nAmountCycles(0),m_ExpSetupOffset(0), m_RAMPtr(0), m_CycleRamBase(0), 
-    m_DataSizeBytes(0), m_cntExpTermination(0) {}
+    /*m_DataSizeBytes(0)*/m_cntExpTermination(0) {}
 public:
     //void set
 
@@ -137,16 +137,16 @@ public:
 
             m_CycleRamBase = (uint16_t)bufParam[5] << 8;
             m_CycleRamBase += bufParam[6];
-
+/*
             m_DataSizeBytes = (uint16_t)bufParam[7] << 8;
             m_DataSizeBytes += bufParam[8];
-
+*/
         }
     }
 
     void terminateExpCmd() {
         n1 = n2 = n3 = 0;
-        m_bSendingDataPkt = false;
+        //m_bSendingDataPkt = false; // move to LinkLayer so terminateExp should make false
         m_bExperimentOn = false;
         m_bSendingResponse = false;
         m_cntExpTermination++;

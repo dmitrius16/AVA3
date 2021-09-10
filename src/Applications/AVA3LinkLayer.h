@@ -22,6 +22,7 @@ private:
 // 
 // do_send_packets 
     uint16_t m_DataSendBytes;
+    uint16_t m_DataSizeBytes;
     uint16_t m_DataPtr;
 //
     AVA3Commands m_curCmd;
