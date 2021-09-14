@@ -21,10 +21,11 @@ private:
     
     uint16_t get_cycles();   //check return type
     // experiment parameter object
-
+    void init();
     //experiment action functions
     void make_pulse();
     void make_cycle_phase();
+    
 public:
     virtual bool run_task();
     virtual bool on_init_process(void *param=nullptr);

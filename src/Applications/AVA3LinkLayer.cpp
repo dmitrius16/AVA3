@@ -128,8 +128,7 @@ void CAVA3LinkLayer::processLink() {
         processRxCmdParamState();
     }
 
-    //do send packets
-
+    do_send_pkts();    //do send packets    //do send packets    //do send packets    //do send packets
 }
 
 void CAVA3LinkLayer::processWaitingCmdState() {
@@ -216,6 +215,7 @@ void CAVA3LinkLayer::processWaitingCmdState() {
 void CAVA3LinkLayer::errRxCmdParameters(int waitLen, int RxLen) {
     
     m_bWaitingCmd = true;
+    m_curCmd = AVA3Commands::Cmd_undefined_cmd;
     if (isDebugMode())
         my_printf("Error rx cmd parameters. Wait %d bytes, received %d\r\n", waitLen, RxLen);    
 }

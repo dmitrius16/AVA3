@@ -160,5 +160,10 @@ public:
         m_nCycleCnt = 0;
     }
     void SetParams(uint8_t* bufParam, int length);
+    
+    void writeToParamMemory(uint16_t addr, uint8_t val);
+    void loadUByte(uint16_t addr, uint8_t& val);
+    void loadUShort(uint16_t addr, uint16_t &val);
+    void loadUInt(uint16_t addr, uint32_t &val);   
 };
 CExpParam* getExpParamInstance(void); 
