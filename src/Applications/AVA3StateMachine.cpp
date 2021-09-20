@@ -3,6 +3,7 @@
 #include "../MyLib/OSWrappers.h"
 #include "esp_timer.h"
 #include "console.h"
+#include "modulInfo.h"
 
 CAVA3StateMachine g_AVA3StateMachine;
 
@@ -125,7 +126,12 @@ void CAVA3StateMachine::make_pulse() {
     uint16_t DACStepCount = 0;
     m_pExpParam->loadUShort(startOffset, DACStepCount);
 
-     /* ctrlByte bits: 
+     
+
+}
+
+void CAVA3StateMachine::processCtrlByte(uint8_t ctrlByte) {
+    /* ctrlByte bits: 
                 0 - turn on microelectrode
                 1 - turn on motor
                 2 - potentiostat / galvanostats
@@ -134,8 +140,8 @@ void CAVA3StateMachine::make_pulse() {
                 5 - 0 - comparsion electrode, 1 - auxiliary electrode
                 6 - cell
                 7 - electrode range 100 mA
-        */
-
+    */
+    
 }
 
 void CAVA3StateMachine::make_cycle_phase() {
